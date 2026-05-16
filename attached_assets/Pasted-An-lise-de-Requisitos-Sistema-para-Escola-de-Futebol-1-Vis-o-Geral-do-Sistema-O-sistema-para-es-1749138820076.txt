@@ -1,0 +1,776 @@
+Análise de Requisitos - Sistema para Escola de Futebol
+
+1. Visão Geral do Sistema
+
+O sistema para escola de futebol será uma plataforma completa para gerenciamento de alunos, responsáveis, pagamentos, turmas e atividades relacionadas. O sistema terá uma estrutura centralizada que permitirá o controle de múltiplas filiais, garantindo consistência nas operações e facilitando a gestão administrativa.
+
+2. Objetivos do Sistema
+
+•
+Centralizar informações de alunos e responsáveis
+
+•
+Automatizar processos de pagamento de mensalidades
+
+•
+Gerenciar turmas, aulas e frequência dos alunos
+
+•
+Controlar vendas de uniformes, artigos esportivos e inscrições em eventos
+
+•
+Gerar relatórios gerenciais para tomada de decisão
+
+•
+Permitir comunicação eficiente entre central e filiais
+
+•
+Monitorar desempenho de alunos e turmas
+
+3. Módulos do Sistema
+
+3.1. Módulo de Cadastro de Alunos
+
+Funcionalidades:
+
+•
+Cadastro completo de dados pessoais do aluno
+
+•
+Registro de informações médicas relevantes
+
+•
+Histórico de turmas e atividades
+
+•
+Upload de documentos e fotos
+
+•
+Registro de avaliações físicas e técnicas
+
+•
+Histórico de pagamentos
+
+•
+Vínculo com responsável
+
+Dados a serem armazenados:
+
+•
+Nome completo
+
+•
+Data de nascimento
+
+•
+RG/CPF (ou documento do responsável para menores)
+
+•
+Endereço completo
+
+•
+Telefones de contato
+
+•
+E-mail
+
+•
+Informações médicas (alergias, condições especiais)
+
+•
+Tamanho de uniforme
+
+•
+Posição em que joga
+
+•
+Foto
+
+•
+Data de matrícula
+
+•
+Status (ativo, inativo, em espera)
+
+3.2. Módulo de Cadastro de Responsáveis
+
+Funcionalidades:
+
+•
+Cadastro completo de dados pessoais do responsável
+
+•
+Vínculo com um ou mais alunos
+
+•
+Histórico de pagamentos realizados
+
+•
+Preferências de comunicação
+
+Dados a serem armazenados:
+
+•
+Nome completo
+
+•
+CPF/RG
+
+•
+Data de nascimento
+
+•
+Endereço completo
+
+•
+Telefones de contato
+
+•
+E-mail
+
+•
+Grau de parentesco com o(s) aluno(s)
+
+•
+Dados bancários para pagamentos automáticos (opcional)
+
+•
+Preferência de comunicação (e-mail, SMS, WhatsApp)
+
+3.3. Módulo de Pagamentos
+
+Funcionalidades:
+
+•
+Controle de mensalidades
+
+•
+Registro de pagamentos de uniformes e artigos esportivos
+
+•
+Pagamento de inscrições em eventos e passeios
+
+•
+Geração de boletos e links de pagamento
+
+•
+Controle de inadimplência
+
+•
+Emissão de recibos
+
+•
+Relatórios financeiros
+
+Métodos de pagamento a serem suportados:
+
+•
+Boleto bancário
+
+•
+Cartão de crédito/débito
+
+•
+PIX
+
+•
+Transferência bancária
+
+•
+Dinheiro (para pagamentos presenciais)
+
+3.4. Módulo de Turmas e Aulas
+
+Funcionalidades:
+
+•
+Criação e gerenciamento de turmas
+
+•
+Definição de horários e locais de aulas
+
+•
+Registro de presença (chamada)
+
+•
+Planejamento de aulas e atividades
+
+•
+Avaliação de desempenho dos alunos
+
+•
+Comunicação com alunos e responsáveis
+
+Dados a serem armazenados:
+
+•
+Nome da turma
+
+•
+Categoria (por idade: Sub-7, Sub-9, etc.)
+
+•
+Nível técnico (iniciante, intermediário, avançado)
+
+•
+Professor responsável
+
+•
+Horários de aula
+
+•
+Local/campo
+
+•
+Capacidade máxima de alunos
+
+•
+Lista de alunos matriculados
+
+•
+Plano de aulas
+
+3.5. Módulo de Eventos e Passeios
+
+Funcionalidades:
+
+•
+Criação e gerenciamento de eventos (campeonatos, festivais, amistosos)
+
+•
+Organização de passeios (visitas a estádios, jogos profissionais)
+
+•
+Controle de inscrições e pagamentos
+
+•
+Geração de autorizações para menores
+
+•
+Comunicação com participantes
+
+Dados a serem armazenados:
+
+•
+Nome do evento/passeio
+
+•
+Data e horário
+
+•
+Local
+
+•
+Descrição detalhada
+
+•
+Valor da inscrição
+
+•
+Limite de participantes
+
+•
+Lista de inscritos
+
+•
+Status de pagamento
+
+•
+Requisitos específicos (documentos, equipamentos)
+
+3.6. Módulo de Artigos Esportivos
+
+Funcionalidades:
+
+•
+Cadastro de produtos (uniformes, equipamentos, acessórios)
+
+•
+Controle de estoque
+
+•
+Registro de vendas
+
+•
+Encomendas personalizadas
+
+•
+Relatórios de vendas
+
+Dados a serem armazenados:
+
+•
+Nome do produto
+
+•
+Categoria
+
+•
+Descrição
+
+•
+Tamanhos disponíveis
+
+•
+Preço
+
+•
+Quantidade em estoque
+
+•
+Imagem do produto
+
+•
+Fornecedor
+
+•
+Histórico de vendas
+
+3.7. Módulo de Relatórios
+
+Funcionalidades:
+
+•
+Geração de relatórios mensais e anuais
+
+•
+Estatísticas de frequência
+
+•
+Relatórios financeiros
+
+•
+Desempenho de alunos
+
+•
+Ocupação de turmas
+
+•
+Vendas de artigos esportivos
+
+•
+Comparativo entre filiais
+
+Tipos de relatórios:
+
+•
+Financeiro (receitas, despesas, inadimplência)
+
+•
+Pedagógico (frequência, evolução técnica)
+
+•
+Administrativo (ocupação de turmas, distribuição de alunos)
+
+•
+Comercial (vendas de produtos, eventos)
+
+3.8. Módulo de Gestão de Filiais
+
+Funcionalidades:
+
+•
+Cadastro e gerenciamento de filiais
+
+•
+Definição de permissões por filial
+
+•
+Sincronização de dados entre central e filiais
+
+•
+Comparativo de desempenho entre filiais
+
+•
+Transferência de alunos entre filiais
+
+Dados a serem armazenados:
+
+•
+Nome da filial
+
+•
+Endereço completo
+
+•
+Telefones de contato
+
+•
+E-mail
+
+•
+Responsável pela unidade
+
+•
+Recursos disponíveis (campos, equipamentos)
+
+•
+Horário de funcionamento
+
+•
+Capacidade total
+
+4. Requisitos Não-Funcionais
+
+4.1. Segurança
+
+•
+Autenticação de dois fatores para usuários administrativos
+
+•
+Criptografia de dados sensíveis
+
+•
+Backup diário automático
+
+•
+Registro de logs de atividades
+
+•
+Níveis de acesso diferenciados por perfil de usuário
+
+4.2. Usabilidade
+
+•
+Interface intuitiva e responsiva
+
+•
+Adaptação para dispositivos móveis
+
+•
+Tempo de resposta rápido
+
+•
+Notificações e alertas para eventos importantes
+
+•
+Ajuda contextual
+
+4.3. Desempenho
+
+•
+Suporte a múltiplos usuários simultâneos
+
+•
+Tempo de carregamento de páginas inferior a 3 segundos
+
+•
+Processamento eficiente de relatórios
+
+•
+Escalabilidade para crescimento do número de filiais
+
+4.4. Integração
+
+•
+API para integração com sistemas de contabilidade
+
+•
+Integração com gateways de pagamento
+
+•
+Possibilidade de exportação de dados em formatos padrão (CSV, Excel)
+
+•
+Integração com serviços de e-mail e SMS para comunicação
+
+5. Perfis de Usuários
+
+5.1. Administrador Central
+
+•
+Acesso completo a todos os módulos e filiais
+
+•
+Configuração de parâmetros do sistema
+
+•
+Gerenciamento de usuários e permissões
+
+•
+Visualização de relatórios consolidados
+
+5.2. Gerente de Filial
+
+•
+Acesso completo aos dados da sua filial
+
+•
+Gerenciamento de turmas e professores
+
+•
+Controle financeiro da filial
+
+•
+Relatórios específicos da filial
+
+5.3. Professor
+
+•
+Registro de presença e atividades
+
+•
+Avaliação de alunos
+
+•
+Visualização de informações dos alunos de suas turmas
+
+•
+Comunicação com alunos e responsáveis
+
+5.4. Atendente
+
+•
+Cadastro de alunos e responsáveis
+
+•
+Recebimento de pagamentos
+
+•
+Vendas de artigos esportivos
+
+•
+Inscrições em eventos e passeios
+
+5.5. Responsável Financeiro
+
+•
+Visualização e controle de pagamentos
+
+•
+Emissão de boletos e recibos
+
+•
+Controle de inadimplência
+
+•
+Relatórios financeiros
+
+5.6. Aluno/Responsável (Portal externo)
+
+•
+Visualização de informações pessoais
+
+•
+Acompanhamento de frequência e desempenho
+
+•
+Pagamento de mensalidades e outros serviços
+
+•
+Inscrição em eventos e passeios
+
+6. Fluxos Principais
+
+6.1. Matrícula de Novo Aluno
+
+1.
+Cadastro do responsável
+
+2.
+Cadastro do aluno vinculado ao responsável
+
+3.
+Seleção da turma
+
+4.
+Definição do plano de pagamento
+
+5.
+Pagamento da matrícula e primeira mensalidade
+
+6.
+Emissão de contrato e comprovante
+
+6.2. Controle de Frequência
+
+1.
+Professor acessa lista de alunos da turma
+
+2.
+Registra presença/ausência de cada aluno
+
+3.
+Sistema armazena dados de frequência
+
+4.
+Notificação automática para responsáveis em caso de ausência
+
+6.3. Pagamento de Mensalidade
+
+1.
+Sistema gera cobrança automaticamente na data definida
+
+2.
+Responsável recebe notificação
+
+3.
+Pagamento é realizado por um dos métodos disponíveis
+
+4.
+Sistema registra pagamento e emite comprovante
+
+5.
+Baixa automática no sistema financeiro
+
+6.4. Organização de Evento
+
+1.
+Cadastro do evento no sistema
+
+2.
+Definição de público-alvo e valor
+
+3.
+Notificação para alunos elegíveis
+
+4.
+Inscrição e pagamento pelos interessados
+
+5.
+Geração de lista de participantes
+
+6.
+Registro de presença no evento
+
+7. Sugestões Adicionais
+
+7.1. Aplicativo Móvel
+
+Desenvolvimento de aplicativo para smartphones que permita:
+
+•
+Acompanhamento de frequência e desempenho
+
+•
+Pagamentos via app
+
+•
+Comunicação direta com professores
+
+•
+Notificações sobre eventos e atividades
+
+•
+Visualização de fotos e vídeos das aulas
+
+7.2. Sistema de Avaliação Técnica
+
+Implementação de um módulo para avaliação técnica dos alunos:
+
+•
+Registro de habilidades específicas
+
+•
+Acompanhamento da evolução ao longo do tempo
+
+•
+Gráficos comparativos
+
+•
+Recomendações personalizadas para desenvolvimento
+
+7.3. Integração com Redes Sociais
+
+Funcionalidade para compartilhamento automático de:
+
+•
+Conquistas dos alunos
+
+•
+Eventos realizados
+
+•
+Novidades da escola
+
+•
+Campanhas promocionais
+
+7.4. Programa de Fidelidade
+
+Sistema de pontos para incentivar a permanência e indicações:
+
+•
+Pontos por tempo de matrícula
+
+•
+Bonificação por indicação de novos alunos
+
+•
+Descontos em produtos e eventos
+
+•
+Prêmios por assiduidade
+
+7.5. Integração com Plataformas de Vídeo
+
+Para disponibilização de:
+
+•
+Aulas complementares online
+
+•
+Análises técnicas individuais
+
+•
+Melhores momentos de jogos e eventos
+
+•
+Tutoriais de exercícios para prática em casa
+
+8. Considerações Técnicas
+
+8.1. Arquitetura Proposta
+
+•
+Backend: API RESTful com Node.js ou Python (Flask/Django)
+
+•
+Frontend: React.js para aplicação web responsiva
+
+•
+Banco de Dados: PostgreSQL ou MySQL
+
+•
+Autenticação: JWT (JSON Web Tokens)
+
+•
+Armazenamento de arquivos: Amazon S3 ou similar
+
+•
+Hospedagem: Serviços em nuvem (AWS, Google Cloud, Azure)
+
+8.2. Estratégia de Implementação
+
+•
+Desenvolvimento modular e incremental
+
+•
+Priorização dos módulos essenciais (cadastro, pagamentos, turmas)
+
+•
+Testes contínuos com usuários reais
+
+•
+Documentação detalhada para facilitar manutenção
+
+•
+Treinamento gradual dos usuários
+
+8.3. Considerações sobre Escalabilidade
+
+•
+Arquitetura que permita crescimento do número de filiais
+
+•
+Banco de dados otimizado para consultas complexas
+
+•
+Cache para melhorar desempenho
+
+•
+Balanceamento de carga para momentos de pico
+
+•
+Monitoramento constante de desempenho
+

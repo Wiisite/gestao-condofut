@@ -1,0 +1,27 @@
+node_modules
+dist
+.DS_Store
+server/public
+vite.config.ts.*
+*.tar.gz
+scratch/
+
+# Arquivos sensíveis - NUNCA commitar
+.env
+.env.local
+.env.production
+.env.*.local
+cookies.txt
+
+# Pastas de configuração do Replit/IDE
+.config/
+.local/
+.replit
+
+# Logs
+*.log
+npm-debug.log*
+
+# IDE
+.idea/
+.vscode/
