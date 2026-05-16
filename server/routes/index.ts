@@ -36,7 +36,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   const PostgresSessionStore = connectPg(session);
   const sessionStore = new PostgresSessionStore({
     conString: process.env.DATABASE_URL,
-    createTableIfMissing: false,
+    createTableIfMissing: true, // Criar tabela automaticamente se não existir
     ttl: 7 * 24 * 60 * 60, // 7 days
   });
 
