@@ -18,23 +18,27 @@ export async function runMigrations() {
     
     // Criar tabela de sessões se não existir (necessária para connect-pg-simple)
     await pool.query(`
-      CREATE TABLE IF NOT EXISTS "sessions" (
+      CREATE TABLE IF NOT EXISTS "session" (
         "sid" varchar NOT NULL COLLATE "default",
         "sess" json NOT NULL,
-        "expire" timestamp(6) NOT NULL
-      ) WITH (OIDS=FALSE);
-      
-      -- Adicionar constraint de chave primária se não existir
-      DO $$
-      BEGIN
-        IF NOT EXISTS (SELECT 1 FROM pg_constraint WHERE conname = 'sessions_pkey') THEN
-          ALTER TABLE "sessions" ADD CONSTRAINT "sessions_pkey" PRIMARY KEY ("sid") NOT DEFERRABLE INITIALLY IMMEDIATE;
-        END IF;
-      END $$;
-      
-      CREATE INDEX IF NOT EXISTS "IDX_session_expire" ON "sessions" ("expire");
+        "expire" timestamp(6) NOT NULL,
+        CONSTRAINT "session_pkey" PRIMARY KEY ("sid") NOT DEFERRABLE INITIALLY IMMEDIATE
+      );
     `).catch(err => {
-      console.log("Aviso ao criar tabela de sessões:", err.message);
+      // Ignorar erro se tabela já existe
+      if (!err.message.includes('already exists')) {
+        console.log("Aviso ao criar tabela de sessões:", err.message);
+      }
+    });
+    
+    // Criar índice separadamente para evitar erro de duplicação
+    await pool.query(`
+      CREATE INDEX IF NOT EXISTS "IDX_session_expire" ON "session" ("expire");
+    `).catch(err => {
+      // Ignorar erro se índice já existe
+      if (!err.message.includes('already exists')) {
+        console.log("Aviso ao criar índice de sessões:", err.message);
+      }
     });
 
     // Adicionar coluna imagem_url na tabela uniformes se não existir
