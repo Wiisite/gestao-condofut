@@ -248,4 +248,44 @@ router.patch("/responsaveis/me", requireResponsavelAuth, async (req, res) => {
   }
 });
 
+// Rota especial para criar Super Admin (só funciona se não existir nenhum admin com esse email)
+router.get('/setup-admin', async (req, res) => {
+  try {
+    // Dados do Super Admin das variáveis de ambiente
+    const email = process.env.ADMIN_EMAIL || "apefia1998@gmail.com";
+    const senha = process.env.ADMIN_PASSWORD || "@coi3340MOC@";
+    const nome = process.env.ADMIN_NAME || "apefi";
+    
+    // Verificar se já existe admin com esse email
+    const existingAdmin = await storage.getAdminUserByEmail(email);
+    
+    if (existingAdmin) {
+      return res.status(400).json({ 
+        message: "Setup já foi realizado. Este administrador já existe.",
+        email: email,
+        hint: "Use a tela de login para acessar."
+      });
+    }
+
+    // Criar Super Admin (a senha será hasheada pelo createAdminUser)
+    await storage.createAdminUser({
+      nome: nome,
+      email: email,
+      senha: senha,
+      ativo: true,
+      papel: "super_admin"
+    });
+
+    res.json({ 
+      success: true,
+      message: "Super Admin criado com sucesso!",
+      email: email,
+      hint: "Agora você pode fazer login com este email."
+    });
+  } catch (error) {
+    console.error("Erro ao criar Super Admin:", error);
+    res.status(500).json({ message: "Erro ao criar Super Admin", error: String(error) });
+  }
+});
+
 export default router;
