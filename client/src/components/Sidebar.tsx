@@ -18,7 +18,8 @@ import {
   Menu,
   X,
   Activity,
-  Package
+  Package,
+  ShieldCheck
 } from "lucide-react";
 import { InterLogo } from "@/components/InterLogo";
 import { cn } from "@/lib/utils";
@@ -112,6 +113,12 @@ export default function Sidebar() {
       icon: Users,
       active: location === "/portal",
     },
+    ...(user?.papel === "super_admin" ? [{
+      name: "Gerenciar Admins",
+      href: "/gerenciar-admins",
+      icon: ShieldCheck,
+      active: location === "/gerenciar-admins",
+    }] : []),
   ];
 
   const handleLogout = async () => {

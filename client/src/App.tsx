@@ -39,6 +39,7 @@ import CombosAulas from "@/pages/CombosAulas";
 import CadastroAluno from "@/pages/CadastroAluno";
 import PortalUnidadeNovo from "@/pages/PortalUnidadeNovo";
 import ConfiguracoesSimples from "@/pages/ConfiguracoesSimples";
+import GerenciarAdmins from "@/pages/GerenciarAdmins";
 import UnidadesConsolidado from "@/pages/UnidadesConsolidado";
 import SistemaUnidadeNovo from "@/pages/SistemaUnidadeNovo";
 import UnidadeProtectedRoute from "@/components/UnidadeProtectedRoute";
@@ -132,6 +133,7 @@ function Router() {
           <Route path="/combos-aulas" component={CombosAulas} />
           <Route path="/cadastro-aluno" component={CadastroAluno} />
           <Route path="/configuracoes" component={ConfiguracoesSimples} />
+          <Route path="/gerenciar-admins" component={GerenciarAdmins} />
           <Route path="/unidade/:filialId" component={DashboardUnidadeWrapper} />
         </Layout>
       )}
