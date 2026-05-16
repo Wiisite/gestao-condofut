@@ -40,6 +40,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     ttl: 7 * 24 * 60 * 60, // 7 days
   });
 
+  const isProduction = process.env.NODE_ENV === 'production';
+  
+  app.set('trust proxy', 1); // Confiar no proxy (Easypanel/nginx)
+  
   app.use(session({
     secret: process.env.SESSION_SECRET || 'escola-futebol-secret-2024',
     store: sessionStore,
@@ -47,9 +51,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     saveUninitialized: false,
     cookie: {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production', // HTTPS em produção
+      secure: isProduction,
       maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-      sameSite: "lax",
+      sameSite: isProduction ? "none" : "lax", // "none" para funcionar com HTTPS através de proxy
     },
   }));
 
