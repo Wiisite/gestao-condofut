@@ -794,11 +794,26 @@ export const adminUsers = pgTable("admin_users", {
   email: varchar("email").unique().notNull(),
   senha: varchar("senha").notNull(),
   ativo: boolean("ativo").default(true),
-  papel: varchar("papel").default("admin"), // admin, gestor, etc
+  papel: varchar("papel").default("admin"), // super_admin, admin
   ultimoLogin: timestamp("ultimo_login"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
+
+// Tabela de convites para admins
+export const adminInvites = pgTable("admin_invites", {
+  id: serial("id").primaryKey(),
+  token: varchar("token", { length: 64 }).unique().notNull(),
+  email: varchar("email", { length: 255 }),
+  papel: varchar("papel", { length: 50 }).default("admin"), // admin
+  criadoPor: integer("criado_por").references(() => adminUsers.id),
+  usado: boolean("usado").default(false),
+  expiraEm: timestamp("expira_em").notNull(),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export type AdminInvite = typeof adminInvites.$inferSelect;
+export type InsertAdminInvite = typeof adminInvites.$inferInsert;
 
 export type AdminUser = typeof adminUsers.$inferSelect;
 export type InsertAdminUser = typeof adminUsers.$inferInsert;

@@ -76,9 +76,9 @@ export default function PortalEscola() {
       </Card>
 
       <footer className="mt-12 text-slate-400 text-sm flex flex-col items-center gap-2">
-        <p>© {new Date().getFullYear()} {config?.nomeEscola || "Escola de Futebol"}</p>
+        <p>© {new Date().getFullYear()} {config?.nomeEscola || "CondoFut"} | CNPJ: 31.866.047/0001-66</p>
         <p className="opacity-75">
-          Powered by <span className="font-bold text-slate-500">EscolaFut</span>
+          Projetado e desenvolvido por <a href="https://wiisite.com.br" target="_blank" rel="noopener noreferrer" className="font-bold text-slate-500 hover:text-slate-700">Wiisite</a>
         </p>
       </footer>
     </div>

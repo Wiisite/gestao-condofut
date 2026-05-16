@@ -151,7 +151,7 @@ export default function PortalUnidadesPublico() {
 
       {/* Footer Simples */}
       <div className="py-12 text-center text-neutral-400 text-sm">
-        <p>© 2026 Sistema de Gestão Esportiva. Todos os direitos reservados.</p>
+        <p>© {new Date().getFullYear()} CondoFut | CNPJ: 31.866.047/0001-66 | Projetado por <a href="https://wiisite.com.br" target="_blank" rel="noopener noreferrer" className="hover:text-neutral-200">Wiisite</a></p>
       </div>
     </div>
   );

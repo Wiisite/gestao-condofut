@@ -400,7 +400,7 @@ export default function PortalUnidadePublicoDetalhes() {
               {config?.nomeEscola || "Condofut Academy"}
             </p>
           </div>
-          <p className="text-[10px] font-medium">© 2026 - TODOS OS DIREITOS RESERVADOS</p>
+          <p className="text-[10px] font-medium">© {new Date().getFullYear()} CondoFut | CNPJ: 31.866.047/0001-66 | <a href="https://wiisite.com.br" target="_blank" rel="noopener noreferrer" className="hover:underline">Wiisite</a></p>
         </div>
       </footer>
     </div>
