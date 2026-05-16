@@ -8,7 +8,7 @@ if (!ACCESS_TOKEN) {
 }
 
 const client = new MercadoPagoConfig({ 
-  accessToken: ACCESS_TOKEN,
+  accessToken: ACCESS_TOKEN || "",
   options: { timeout: 10000 }
 });
 
@@ -124,7 +124,7 @@ export async function processPayment(data: ProcessPaymentData) {
         description: data.description,
         installments: Number(data.installments),
         payment_method_id: data.payment_method_id,
-        issuer_id: data.issuer_id ? data.issuer_id.toString() : undefined,
+        issuer_id: data.issuer_id ? Number(data.issuer_id) : undefined,
         payer: data.payer,
         external_reference: data.external_reference,
         notification_url: `${process.env.APP_URL || 'http://localhost:5000'}/api/mercadopago/webhook`

@@ -1558,6 +1558,9 @@ export default function ResponsavelPortal() {
                     setCheckoutEvento(null);
                     queryClient.invalidateQueries({ queryKey: ["/api/inscricoes-eventos"] });
                   }}
+                  onError={(error) => {
+                    console.error("Erro no checkout do evento:", error);
+                  }}
                 />
               ) : (
                 <Button 
