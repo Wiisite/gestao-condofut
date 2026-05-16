@@ -716,7 +716,9 @@ export class DatabaseStorage implements IStorage {
     totalAlunos: number;
     totalProfessores: number;
     totalTurmas: number;
+    totalFiliais: number;
     receitaMensal: number;
+    receitaTotal: number;
   }> {
     const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM format
 
@@ -734,18 +736,32 @@ export class DatabaseStorage implements IStorage {
       .from(turmas)
       .where(eq(turmas.ativo, true));
 
-    const [receitaResult] = await db
+    const [filiaisCount] = await db
+      .select({ count: count() })
+      .from(filiais)
+      .where(sql`${filiais.ativa} IS NOT FALSE`);
+
+    const [receitaMensalResult] = await db
       .select({
         total: sql<number>`COALESCE(SUM(${pagamentos.valor}), 0)`,
       })
       .from(pagamentos)
       .where(eq(pagamentos.mesReferencia, currentMonth));
 
+    const [receitaTotalResult] = await db
+      .select({
+        total: sql<number>`COALESCE(SUM(${pagamentos.valor}), 0)`,
+      })
+      .from(pagamentos)
+      .where(eq(pagamentos.status, 'pago'));
+
     return {
       totalAlunos: alunosCount.count,
       totalProfessores: professoresCount.count,
       totalTurmas: turmasCount.count,
-      receitaMensal: Number(receitaResult.total),
+      totalFiliais: filiaisCount.count,
+      receitaMensal: Number(receitaMensalResult.total),
+      receitaTotal: Number(receitaTotalResult.total),
     };
   }
 

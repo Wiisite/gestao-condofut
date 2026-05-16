@@ -19,6 +19,7 @@ interface DashboardMetrics {
   totalAlunos: number;
   totalProfessores: number;
   totalTurmas: number;
+  totalFiliais: number;
   receitaMensal: number;
   receitaTotal: number;
 }
@@ -433,7 +434,7 @@ export default function Dashboard() {
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="text-center p-3 bg-blue-50 rounded-lg border border-blue-200">
-              <p className="text-2xl font-bold text-blue-600">1</p>
+              <p className="text-2xl font-bold text-blue-600">{metrics?.totalFiliais || 0}</p>
               <p className="text-sm text-blue-700">Unidades Ativas</p>
             </div>
             <div className="text-center p-3 bg-blue-50 rounded-lg border border-blue-200">
