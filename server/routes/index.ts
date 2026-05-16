@@ -69,6 +69,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.use("/api/notificacoes", notificacoesRoutes);
   app.use("/api", eventosUniformesRoutes); // Eventos e Uniformes usam /api/eventos e /api/uniformes
   app.use("/api", atividadesRoutes); // Presenças, Avaliações, Pacotes
+  app.use("/api", adminRoutes); // Suporte para /api/configuracoes e /api/metrics
   app.use("/api/admin", adminRoutes);
 
   const httpServer = createServer(app);

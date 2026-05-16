@@ -20,9 +20,7 @@ async function scanTable(tableName: string) {
 }
 
 async function run() {
-  await scanTable('eventos');
-  console.log('\n');
-  await scanTable('alunos');
+  await scanTable('configuracoes_sistema');
 }
 
 run();

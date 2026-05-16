@@ -18,7 +18,7 @@ const requireSuperAdmin = async (req: any, res: any, next: any) => {
 };
 
 // Dashboard & Metrics
-router.get("/metrics", requireAdminAuth, async (req, res) => {
+router.get(["/metrics", "/dashboard/metrics"], requireAdminAuth, async (req, res) => {
   try {
     const stats = await storage.getDashboardMetrics();
     res.json(stats);
