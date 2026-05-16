@@ -808,7 +808,8 @@ export const adminInvites = pgTable("admin_invites", {
   papel: varchar("papel", { length: 50 }).default("admin"), // admin
   criadoPor: integer("criado_por").references(() => adminUsers.id),
   usado: boolean("usado").default(false),
-  expiraEm: timestamp("expira_em").notNull(),
+  ativo: boolean("ativo").default(true),
+  expiraEm: timestamp("expira_em"), // Null significa que nunca expira
   createdAt: timestamp("created_at").defaultNow(),
 });
 

@@ -155,10 +155,14 @@ router.get("/invites", requireAdminAuth, requireSuperAdmin, async (req, res) => 
 // Criar convite (apenas super_admin)
 router.post("/invites", requireAdminAuth, requireSuperAdmin, async (req, res) => {
   try {
-    const { email, papel } = req.body;
+    const { email, papel, diasValidade } = req.body;
     const token = crypto.randomBytes(32).toString("hex");
-    const expiraEm = new Date();
-    expiraEm.setDate(expiraEm.getDate() + 7); // Expira em 7 dias
+    
+    let expiraEm = null;
+    if (diasValidade && diasValidade > 0) {
+      expiraEm = new Date();
+      expiraEm.setDate(expiraEm.getDate() + diasValidade);
+    }
     
     const [invite] = await db.insert(adminInvites).values({
       token,
@@ -166,12 +170,31 @@ router.post("/invites", requireAdminAuth, requireSuperAdmin, async (req, res) =>
       papel: papel || "admin",
       criadoPor: req.session?.adminUser?.id,
       expiraEm,
+      ativo: true,
     }).returning();
     
     res.json(invite);
   } catch (error) {
     console.error("Error creating invite:", error);
     res.status(500).json({ message: "Erro ao criar convite" });
+  }
+});
+
+// Ativar/Desativar convite (apenas super_admin)
+router.patch("/invites/:id", requireAdminAuth, requireSuperAdmin, async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { ativo } = req.body;
+    
+    const [updated] = await db.update(adminInvites)
+      .set({ ativo })
+      .where(eq(adminInvites.id, parseInt(id)))
+      .returning();
+      
+    res.json(updated);
+  } catch (error) {
+    console.error("Error updating invite:", error);
+    res.status(500).json({ message: "Erro ao atualizar convite" });
   }
 });
 
@@ -206,7 +229,11 @@ router.get("/verify-invite", async (req, res) => {
       return res.status(400).json({ message: "Este convite já foi utilizado" });
     }
     
-    if (new Date(invite.expiraEm) < new Date()) {
+    if (!invite.ativo) {
+      return res.status(400).json({ message: "Este convite foi desativado pelo administrador" });
+    }
+    
+    if (invite.expiraEm && new Date(invite.expiraEm) < new Date()) {
       return res.status(400).json({ message: "Este convite expirou" });
     }
     
@@ -241,7 +268,11 @@ router.post("/register-invite", async (req, res) => {
       return res.status(400).json({ message: "Este convite já foi utilizado" });
     }
     
-    if (new Date(invite.expiraEm) < new Date()) {
+    if (!invite.ativo) {
+      return res.status(400).json({ message: "Este convite foi desativado pelo administrador" });
+    }
+    
+    if (invite.expiraEm && new Date(invite.expiraEm) < new Date()) {
       return res.status(400).json({ message: "Este convite expirou" });
     }
     

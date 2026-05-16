@@ -50,7 +50,8 @@ interface AdminInvite {
   email: string | null;
   papel: string;
   usado: boolean;
-  expiraEm: string;
+  ativo: boolean;
+  expiraEm: string | null;
   createdAt: string;
 }
 
@@ -63,6 +64,7 @@ export default function GerenciarAdmins() {
   const [newAdmin, setNewAdmin] = useState({ nome: "", email: "", senha: "", papel: "admin" });
   const [inviteEmail, setInviteEmail] = useState("");
   const [invitePapel, setInvitePapel] = useState("admin");
+  const [inviteDiasValidade, setInviteDiasValidade] = useState("7");
   const [generatedLink, setGeneratedLink] = useState("");
 
   // Verificar se é super_admin
@@ -99,7 +101,7 @@ export default function GerenciarAdmins() {
 
   // Gerar link de convite
   const createInviteMutation = useMutation({
-    mutationFn: async (data: { email?: string; papel: string }) => {
+    mutationFn: async (data: { email?: string; papel: string; diasValidade?: number }) => {
       const response = await apiRequest("POST", "/api/admin/invites", data);
       return response.json();
     },
@@ -141,6 +143,21 @@ export default function GerenciarAdmins() {
     },
     onError: (error: Error) => {
       toast({ title: "Erro ao excluir", description: error.message, variant: "destructive" });
+    },
+  });
+
+  // Ativar/Desativar convite
+  const toggleInviteMutation = useMutation({
+    mutationFn: async ({ id, ativo }: { id: number; ativo: boolean }) => {
+      const response = await apiRequest("PATCH", `/api/admin/invites/${id}`, { ativo });
+      return response.json();
+    },
+    onSuccess: () => {
+      toast({ title: "Status do convite atualizado!" });
+      queryClient.invalidateQueries({ queryKey: ["/api/admin/invites"] });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Erro ao atualizar convite", description: error.message, variant: "destructive" });
     },
   });
 
@@ -211,6 +228,20 @@ export default function GerenciarAdmins() {
                     </SelectContent>
                   </Select>
                 </div>
+                <div className="space-y-2">
+                  <Label>Expiração</Label>
+                  <Select value={inviteDiasValidade} onValueChange={setInviteDiasValidade}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="1">1 dia</SelectItem>
+                      <SelectItem value="7">7 dias</SelectItem>
+                      <SelectItem value="30">30 dias</SelectItem>
+                      <SelectItem value="0">Nunca expira</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
                 {generatedLink && (
                   <div className="space-y-2">
                     <Label>Link Gerado</Label>
@@ -225,7 +256,11 @@ export default function GerenciarAdmins() {
               </div>
               <DialogFooter>
                 <Button
-                  onClick={() => createInviteMutation.mutate({ email: inviteEmail || undefined, papel: invitePapel })}
+                  onClick={() => createInviteMutation.mutate({ 
+                    email: inviteEmail || undefined, 
+                    papel: invitePapel,
+                    diasValidade: parseInt(inviteDiasValidade)
+                  })}
                   disabled={createInviteMutation.isPending}
                 >
                   {createInviteMutation.isPending ? "Gerando..." : "Gerar Link"}
@@ -400,22 +435,35 @@ export default function GerenciarAdmins() {
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <Badge variant={invite.usado ? "secondary" : "default"}>
-                        {invite.usado ? "Usado" : "Pendente"}
+                      <Badge variant={invite.usado ? "secondary" : invite.ativo ? "default" : "destructive"}>
+                        {invite.usado ? "Usado" : invite.ativo ? "Pendente" : "Bloqueado"}
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      {new Date(invite.expiraEm).toLocaleDateString("pt-BR")}
+                      {invite.expiraEm 
+                        ? new Date(invite.expiraEm).toLocaleDateString("pt-BR")
+                        : "Nunca"}
                     </TableCell>
                     <TableCell className="flex gap-2">
                       {!invite.usado && (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => copyToClipboard(`${window.location.origin}/admin/cadastro?token=${invite.token}`)}
-                        >
-                          <Copy className="w-4 h-4" />
-                        </Button>
+                        <>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => copyToClipboard(`${window.location.origin}/admin/cadastro?token=${invite.token}`)}
+                          >
+                            <Copy className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant={invite.ativo ? "destructive" : "default"}
+                            onClick={() => toggleInviteMutation.mutate({ id: invite.id, ativo: !invite.ativo })}
+                            disabled={toggleInviteMutation.isPending}
+                            title={invite.ativo ? "Bloquear Convite" : "Ativar Convite"}
+                          >
+                            {invite.ativo ? <X className="w-4 h-4" /> : <Check className="w-4 h-4" />}
+                          </Button>
+                        </>
                       )}
                       <Button
                         size="sm"
