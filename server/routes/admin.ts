@@ -187,4 +187,97 @@ router.delete("/invites/:id", requireAdminAuth, requireSuperAdmin, async (req, r
   }
 });
 
+// Verificar convite (público)
+router.get("/verify-invite", async (req, res) => {
+  try {
+    const { token } = req.query;
+    
+    if (!token) {
+      return res.status(400).json({ message: "Token não fornecido" });
+    }
+    
+    const [invite] = await db.select().from(adminInvites).where(eq(adminInvites.token, token as string));
+    
+    if (!invite) {
+      return res.status(404).json({ message: "Convite não encontrado" });
+    }
+    
+    if (invite.usado) {
+      return res.status(400).json({ message: "Este convite já foi utilizado" });
+    }
+    
+    if (new Date(invite.expiraEm) < new Date()) {
+      return res.status(400).json({ message: "Este convite expirou" });
+    }
+    
+    res.json({ 
+      valid: true, 
+      email: invite.email,
+      papel: invite.papel 
+    });
+  } catch (error) {
+    console.error("Error verifying invite:", error);
+    res.status(500).json({ message: "Erro ao verificar convite" });
+  }
+});
+
+// Registrar via convite (público)
+router.post("/register-invite", async (req, res) => {
+  try {
+    const { token, nome, email, senha } = req.body;
+    
+    if (!token || !nome || !email || !senha) {
+      return res.status(400).json({ message: "Dados incompletos" });
+    }
+    
+    // Verificar convite
+    const [invite] = await db.select().from(adminInvites).where(eq(adminInvites.token, token));
+    
+    if (!invite) {
+      return res.status(404).json({ message: "Convite não encontrado" });
+    }
+    
+    if (invite.usado) {
+      return res.status(400).json({ message: "Este convite já foi utilizado" });
+    }
+    
+    if (new Date(invite.expiraEm) < new Date()) {
+      return res.status(400).json({ message: "Este convite expirou" });
+    }
+    
+    // Verificar se email do convite bate (se especificado)
+    if (invite.email && invite.email !== email) {
+      return res.status(400).json({ message: "Email não corresponde ao convite" });
+    }
+    
+    // Verificar se email já existe
+    const existing = await db.select().from(adminUsers).where(eq(adminUsers.email, email));
+    if (existing.length > 0) {
+      return res.status(400).json({ message: "Este email já está cadastrado" });
+    }
+    
+    // Hash da senha
+    const senhaHash = await bcrypt.hash(senha, 10);
+    
+    // Criar usuário
+    const [newUser] = await db.insert(adminUsers).values({
+      nome,
+      email,
+      senha: senhaHash,
+      papel: invite.papel || "admin",
+      ativo: true,
+    }).returning();
+    
+    // Marcar convite como usado
+    await db.update(adminInvites)
+      .set({ usado: true })
+      .where(eq(adminInvites.id, invite.id));
+    
+    res.json({ success: true, message: "Cadastro realizado com sucesso!" });
+  } catch (error) {
+    console.error("Error registering via invite:", error);
+    res.status(500).json({ message: "Erro ao realizar cadastro" });
+  }
+});
+
 export default router;

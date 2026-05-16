@@ -40,6 +40,7 @@ import CadastroAluno from "@/pages/CadastroAluno";
 import PortalUnidadeNovo from "@/pages/PortalUnidadeNovo";
 import ConfiguracoesSimples from "@/pages/ConfiguracoesSimples";
 import GerenciarAdmins from "@/pages/GerenciarAdmins";
+import AdminCadastro from "@/pages/AdminCadastro";
 import UnidadesConsolidado from "@/pages/UnidadesConsolidado";
 import SistemaUnidadeNovo from "@/pages/SistemaUnidadeNovo";
 import UnidadeProtectedRoute from "@/components/UnidadeProtectedRoute";
@@ -112,6 +113,7 @@ function Router() {
         <>
           <Route path="/" component={PortalEscola} />
           <Route path="/admin-login" component={AdminLogin} />
+          <Route path="/admin/cadastro" component={AdminCadastro} />
         </>
       ) : (
         <Layout>

@@ -139,12 +139,6 @@ export default function AdminLogin() {
             </form>
           </Form>
 
-          <div className="mt-6 text-center text-sm text-gray-600">
-            <p>Credenciais padrão:</p>
-            <p>Email: admin@escolafut.com</p>
-            <p>Senha: admin123</p>
-          </div>
-          
           <div className="mt-4 text-center">
             <Button
               variant="ghost"
