@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,6 +26,10 @@ type CadastroFormData = z.infer<typeof cadastroSchema>;
 export default function ResponsavelCadastro() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
+
+  const { data: config } = useQuery<any>({
+    queryKey: ["/api/configuracoes"],
+  });
 
   const form = useForm<CadastroFormData>({
     resolver: zodResolver(cadastroSchema),
@@ -64,14 +68,20 @@ export default function ResponsavelCadastro() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-green-100 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
       <div className="w-full max-w-md space-y-6">
         {/* Logo/Header */}
         <div className="text-center">
-          <div className="mx-auto w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mb-4 p-2">
-            <InterLogo size={48} />
+          <div className="mx-auto w-20 h-20 bg-white rounded-full shadow-md flex items-center justify-center mb-4 p-2 overflow-hidden border-2 border-blue-100">
+            {config?.logoUrl ? (
+              <img src={config.logoUrl} alt={config.nomeEscola || "Logo"} className="w-full h-full object-contain" />
+            ) : (
+              <div className="bg-blue-600 w-full h-full rounded-full flex items-center justify-center">
+                <InterLogo size={48} />
+              </div>
+            )}
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">Portal dos Responsáveis</h1>
+          <h1 className="text-2xl font-bold text-gray-900">{config?.nomeEscola || "Portal dos Responsáveis"}</h1>
           <p className="text-gray-600 mt-2">Cadastre-se para acompanhar seus filhos</p>
         </div>
 
@@ -182,7 +192,7 @@ export default function ResponsavelCadastro() {
 
                 <Button 
                   type="submit" 
-                  className="w-full"
+                  className="w-full bg-blue-600 hover:bg-blue-700"
                   disabled={cadastroMutation.isPending}
                 >
                   {cadastroMutation.isPending ? "Cadastrando..." : "Criar Conta"}
@@ -193,7 +203,7 @@ export default function ResponsavelCadastro() {
             <div className="mt-6 text-center">
               <p className="text-sm text-gray-600">
                 Já tem uma conta?{" "}
-                <Link href="/responsavel/login" className="text-green-600 hover:text-green-700 font-medium">
+                <Link href="/responsavel/login" className="text-blue-600 hover:text-blue-700 font-medium">
                   Fazer Login
                 </Link>
               </p>

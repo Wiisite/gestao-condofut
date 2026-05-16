@@ -3,21 +3,32 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, UserPlus, LogIn, Shield, Bell, CreditCard, Calendar } from "lucide-react";
 import { InterLogo } from "@/components/InterLogo";
+import { useQuery } from "@tanstack/react-query";
 
 export default function ResponsavelEntrada() {
+  const { data: config } = useQuery<any>({
+    queryKey: ["/api/configuracoes"],
+  });
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-green-100">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       {/* Header */}
       <div className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center py-6">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center p-1">
-                <InterLogo size={32} />
+              <div className="w-12 h-12 bg-white rounded-full shadow-sm flex items-center justify-center p-1 overflow-hidden border border-blue-100">
+                {config?.logoUrl ? (
+                  <img src={config.logoUrl} alt="Logo" className="w-full h-full object-contain" />
+                ) : (
+                  <div className="bg-blue-600 w-full h-full rounded-full flex items-center justify-center">
+                    <InterLogo size={32} />
+                  </div>
+                )}
               </div>
               <div>
-                <h1 className="text-xl font-bold text-gray-900">Portal dos Responsáveis</h1>
-                <p className="text-sm text-gray-600">Escola de Futebol</p>
+                <h1 className="text-xl font-bold text-gray-900">{config?.nomeEscola || "Portal dos Responsáveis"}</h1>
+                <p className="text-sm text-gray-600">Acesso para Pais e Responsáveis</p>
               </div>
             </div>
             <Link href="/">
@@ -43,9 +54,9 @@ export default function ResponsavelEntrada() {
 
         {/* Features Grid */}
         <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-          <Card className="text-center">
+          <Card className="text-center border-blue-100">
             <CardHeader>
-              <CreditCard className="w-8 h-8 text-green-600 mx-auto mb-2" />
+              <CreditCard className="w-8 h-8 text-blue-600 mx-auto mb-2" />
               <CardTitle className="text-lg">Pagamentos</CardTitle>
             </CardHeader>
             <CardContent>
@@ -55,9 +66,9 @@ export default function ResponsavelEntrada() {
             </CardContent>
           </Card>
 
-          <Card className="text-center">
+          <Card className="text-center border-blue-100">
             <CardHeader>
-              <Bell className="w-8 h-8 text-green-600 mx-auto mb-2" />
+              <Bell className="w-8 h-8 text-blue-600 mx-auto mb-2" />
               <CardTitle className="text-lg">Notificações</CardTitle>
             </CardHeader>
             <CardContent>
@@ -67,9 +78,9 @@ export default function ResponsavelEntrada() {
             </CardContent>
           </Card>
 
-          <Card className="text-center">
+          <Card className="text-center border-blue-100">
             <CardHeader>
-              <Calendar className="w-8 h-8 text-green-600 mx-auto mb-2" />
+              <Calendar className="w-8 h-8 text-blue-600 mx-auto mb-2" />
               <CardTitle className="text-lg">Eventos</CardTitle>
             </CardHeader>
             <CardContent>
@@ -79,9 +90,9 @@ export default function ResponsavelEntrada() {
             </CardContent>
           </Card>
 
-          <Card className="text-center">
+          <Card className="text-center border-blue-100">
             <CardHeader>
-              <Shield className="w-8 h-8 text-green-600 mx-auto mb-2" />
+              <Shield className="w-8 h-8 text-blue-600 mx-auto mb-2" />
               <CardTitle className="text-lg">Uniformes</CardTitle>
             </CardHeader>
             <CardContent>
@@ -95,9 +106,9 @@ export default function ResponsavelEntrada() {
         {/* Action Cards */}
         <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
           {/* Login Card */}
-          <Card className="h-full">
+          <Card className="h-full border-blue-100 shadow-sm">
             <CardHeader className="text-center">
-              <LogIn className="w-12 h-12 text-green-600 mx-auto mb-4" />
+              <LogIn className="w-12 h-12 text-blue-600 mx-auto mb-4" />
               <CardTitle className="text-2xl">Já tem uma conta?</CardTitle>
               <CardDescription className="text-base">
                 Faça login para acessar o portal e acompanhar seus filhos
@@ -105,7 +116,7 @@ export default function ResponsavelEntrada() {
             </CardHeader>
             <CardContent className="text-center">
               <Link href="/responsavel/login">
-                <Button size="lg" className="w-full bg-green-600 hover:bg-green-700">
+                <Button size="lg" className="w-full bg-blue-600 hover:bg-blue-700">
                   <LogIn className="w-5 h-5 mr-2" />
                   Fazer Login
                 </Button>

@@ -11,6 +11,7 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { Eye, EyeOff, User, Lock, School, ArrowLeft } from "lucide-react";
 import { InterLogo } from "@/components/InterLogo";
+import { useQuery } from "@tanstack/react-query";
 
 const loginSchema = z.object({
   email: z.string().email("Email inválido"),
@@ -43,6 +44,10 @@ export default function ResponsavelLogin() {
   const [showPassword, setShowPassword] = useState(false);
   const [isLogin, setIsLogin] = useState(true);
   const { toast } = useToast();
+
+  const { data: config } = useQuery<any>({
+    queryKey: ["/api/configuracoes"],
+  });
 
   const {
     register,
@@ -96,14 +101,20 @@ export default function ResponsavelLogin() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 to-blue-50 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
         {/* Header */}
         <div className="text-center mb-8">
-          <div className="w-16 h-16 bg-blue-600 rounded-full flex items-center justify-center mx-auto mb-4 p-2">
-            <InterLogo size={48} />
+          <div className="w-20 h-20 bg-white rounded-full shadow-md flex items-center justify-center mx-auto mb-4 p-2 overflow-hidden border-2 border-blue-100">
+            {config?.logoUrl ? (
+              <img src={config.logoUrl} alt={config.nomeEscola || "Logo"} className="w-full h-full object-contain" />
+            ) : (
+              <div className="bg-blue-600 w-full h-full rounded-full flex items-center justify-center">
+                <InterLogo size={48} />
+              </div>
+            )}
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">Portal do Responsável</h1>
+          <h1 className="text-2xl font-bold text-gray-900">{config?.nomeEscola || "Portal do Responsável"}</h1>
           <p className="text-gray-600 mt-2">
             {isLogin ? "Acesse sua conta" : "Crie sua conta"}
           </p>
@@ -216,7 +227,7 @@ export default function ResponsavelLogin() {
 
               <Button
                 type="submit"
-                className="w-full bg-green-600 hover:bg-green-700"
+                className="w-full bg-blue-600 hover:bg-blue-700"
                 disabled={isSubmitting}
               >
                 {isSubmitting ? "Carregando..." : isLogin ? "Entrar" : "Criar Conta"}
@@ -231,7 +242,7 @@ export default function ResponsavelLogin() {
                     setIsLogin(!isLogin);
                     reset();
                   }}
-                  className="text-green-600 hover:text-green-700 font-medium"
+                  className="text-blue-600 hover:text-blue-700 font-medium"
                 >
                   {isLogin ? "Criar conta" : "Fazer login"}
                 </button>
