@@ -188,8 +188,12 @@ export interface IStorage {
 
   // Notificações operations
   getNotificacoesByResponsavel(responsavelId: number): Promise<Notificacao[]>;
+  getNotificacoesAdmin(): Promise<Notificacao[]>;
   createNotificacao(notificacao: InsertNotificacao): Promise<Notificacao>;
+  createBulkNotificacoes(notificacoes: InsertNotificacao[]): Promise<void>;
   marcarNotificacaoLida(id: number): Promise<void>;
+  getResponsaveisIdsTodos(): Promise<number[]>;
+  getResponsaveisIdsInadimplentes(): Promise<number[]>;
 
   // Presenças operations
   getPresencas(): Promise<Presenca[]>;
@@ -1053,6 +1057,13 @@ export class DatabaseStorage implements IStorage {
       .orderBy(desc(notificacoes.createdAt));
   }
 
+  async getNotificacoesAdmin(): Promise<Notificacao[]> {
+    return await db
+      .select()
+      .from(notificacoes)
+      .orderBy(desc(notificacoes.createdAt));
+  }
+
   async createNotificacao(notificacao: InsertNotificacao): Promise<Notificacao> {
     const [novaNotificacao] = await db
       .insert(notificacoes)
@@ -1061,11 +1072,38 @@ export class DatabaseStorage implements IStorage {
     return novaNotificacao;
   }
 
+  async createBulkNotificacoes(notificacoesData: InsertNotificacao[]): Promise<void> {
+    if (notificacoesData.length === 0) return;
+    await db.insert(notificacoes).values(notificacoesData);
+  }
+
   async marcarNotificacaoLida(id: number): Promise<void> {
     await db
       .update(notificacoes)
       .set({ lida: true })
       .where(eq(notificacoes.id, id));
+  }
+
+  async getResponsaveisIdsTodos(): Promise<number[]> {
+    const result = await db.select({ id: responsaveis.id }).from(responsaveis);
+    return result.map(r => r.id);
+  }
+
+  async getResponsaveisIdsInadimplentes(): Promise<number[]> {
+    const allResponsaveis = await db.select().from(responsaveis);
+    const inadimplentesIds: number[] = [];
+
+    for (const resp of allResponsaveis) {
+      const respWithAlunos = await this.getResponsavelWithAlunos(resp.id);
+      if (respWithAlunos && respWithAlunos.alunos) {
+        const isInadimplente = respWithAlunos.alunos.some(aluno => !aluno.statusPagamento.emDia);
+        if (isInadimplente) {
+          inadimplentesIds.push(resp.id);
+        }
+      }
+    }
+
+    return inadimplentesIds;
   }
 
   // Presenças operations

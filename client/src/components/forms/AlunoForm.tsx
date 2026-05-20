@@ -11,8 +11,8 @@ import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
 import { insertAlunoSchema, type Aluno, type InsertAluno, type Filial } from "@shared/schema";
 import { z } from "zod";
-import { Camera, Download, Upload, ImageIcon, User } from "lucide-react";
-import { useRef, useState } from "react";
+import { Camera, Download, Upload, ImageIcon, User, MapPin, Building } from "lucide-react";
+import { useRef, useState, useEffect } from "react";
 
 // Schema base para edição (sem validação de responsável)
 const editFormSchema = insertAlunoSchema.extend({
@@ -86,6 +86,8 @@ export default function AlunoForm({ aluno, onSuccess }: AlunoFormProps) {
       cep: aluno?.cep || "",
       cidade: aluno?.cidade || "",
       estado: aluno?.estado || "",
+      apartamento: (aluno as any)?.apartamento || "",
+      bloco: (aluno as any)?.bloco || "",
       filialId: aluno?.filialId || undefined,
       nomeResponsavel: aluno?.nomeResponsavel || "",
       telefoneResponsavel: aluno?.telefoneResponsavel || "",
@@ -98,6 +100,20 @@ export default function AlunoForm({ aluno, onSuccess }: AlunoFormProps) {
       responsavelSenha: "",
     },
   });
+
+  const filialIdWatched = form.watch("filialId");
+
+  useEffect(() => {
+    if (filialIdWatched && filiais && !isEditing) {
+      const filialSelecionada = filiais.find(f => f.id === filialIdWatched);
+      if (filialSelecionada) {
+        form.setValue("endereco", filialSelecionada.endereco || "");
+        form.setValue("bairro", filialSelecionada.bairro || "");
+        form.setValue("cidade", filialSelecionada.cidade || "São Paulo");
+        form.setValue("estado", filialSelecionada.estado || "SP");
+      }
+    }
+  }, [filialIdWatched, filiais, isEditing, form]);
 
   // Funções para captura de foto
   const startCapture = async () => {
@@ -202,6 +218,8 @@ export default function AlunoForm({ aluno, onSuccess }: AlunoFormProps) {
         cep: data.cep || null,
         cidade: data.cidade || null,
         estado: data.estado || null,
+        apartamento: (data as any).apartamento || null,
+        bloco: (data as any).bloco || null,
         filialId: data.filialId || null,
         ativo: true,
       };
@@ -279,6 +297,8 @@ export default function AlunoForm({ aluno, onSuccess }: AlunoFormProps) {
           cep: data.cep || null,
           cidade: data.cidade || null,
           estado: data.estado || null,
+          apartamento: data.apartamento || null,
+          bloco: data.bloco || null,
           filialId: data.filialId || null,
           nomeResponsavel: data.responsavelNome || data.nomeResponsavel || null,
           telefoneResponsavel: data.responsavelTelefone || data.telefoneResponsavel || null,
@@ -566,33 +586,51 @@ export default function AlunoForm({ aluno, onSuccess }: AlunoFormProps) {
 
         {/* Seção de Endereço */}
         <div className="border-t pt-6 mt-6">
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">Endereço</h3>
+          <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center space-x-2">
+            <Building className="w-5 h-5 text-primary" />
+            <span>Endereço do Aluno (Condomínio)</span>
+          </h3>
+
+          {(() => {
+            const selectedFilial = filiais?.find(f => f.id === filialIdWatched);
+            return selectedFilial ? (
+              <div className="bg-neutral-50 border border-neutral-200/80 rounded-xl p-4 flex items-start space-x-3 mb-6 animate-in fade-in slide-in-from-top-2 duration-200">
+                <div className="p-2 bg-primary/10 rounded-lg text-primary mt-0.5">
+                  <MapPin className="w-5 h-5" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h4 className="text-sm font-semibold text-neutral-800">Endereço da Unidade: {selectedFilial.nome}</h4>
+                  <p className="text-xs text-neutral-600 mt-1">
+                    {selectedFilial.endereco}
+                    {selectedFilial.bairro ? `, ${selectedFilial.bairro}` : ""}
+                    {selectedFilial.cidade ? ` - ${selectedFilial.cidade}` : ""}
+                    {selectedFilial.estado ? `/${selectedFilial.estado}` : ""}
+                  </p>
+                  <span className="text-[10px] text-primary font-semibold mt-2.5 inline-block bg-primary/5 px-2 py-0.5 rounded-full border border-primary/10">
+                    Preenchido Automaticamente
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <div className="bg-neutral-50 border border-dashed border-neutral-200 rounded-xl p-4 flex items-center justify-center space-x-2 text-neutral-500 mb-6 text-sm">
+                <MapPin className="w-4 h-4 text-neutral-400" />
+                <span>Selecione uma Unidade acima para carregar o endereço do condomínio</span>
+              </div>
+            );
+          })()}
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FormField
               control={form.control}
-              name="cep"
+              name="apartamento"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>CEP</FormLabel>
+                  <FormLabel>Apartamento / Unidade</FormLabel>
                   <FormControl>
                     <Input 
-                      placeholder="00000-000" 
-                      maxLength={9}
+                      placeholder="Ex: 102, Bloco C" 
                       {...field}
                       value={field.value || ""}
-                      onChange={(e) => {
-                        const numbers = e.target.value.replace(/\D/g, '');
-                        let formatted = numbers;
-                        if (numbers.length > 5) {
-                          formatted = numbers.slice(0, 5) + '-' + numbers.slice(5, 8);
-                        }
-                        field.onChange(formatted);
-                        if (numbers.length === 8) {
-                          handleCEPChange(numbers);
-                        }
-                      }}
-                      onBlur={(e) => handleCEPChange(e.target.value)}
                     />
                   </FormControl>
                   <FormMessage />
@@ -602,13 +640,13 @@ export default function AlunoForm({ aluno, onSuccess }: AlunoFormProps) {
 
             <FormField
               control={form.control}
-              name="endereco"
+              name="bloco"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Endereço Completo</FormLabel>
+                  <FormLabel>Bloco / Torre</FormLabel>
                   <FormControl>
                     <Input 
-                      placeholder="Digite o endereço completo"
+                      placeholder="Ex: Torre A" 
                       {...field}
                       value={field.value || ""}
                     />
@@ -619,55 +657,32 @@ export default function AlunoForm({ aluno, onSuccess }: AlunoFormProps) {
             />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+          {/* Campos escondidos de endereço para compatibilidade com o schema e o envio ao backend */}
+          <div className="hidden">
+            <FormField
+              control={form.control}
+              name="endereco"
+              render={({ field }) => <Input type="hidden" {...field} value={field.value || ""} />}
+            />
             <FormField
               control={form.control}
               name="bairro"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Bairro</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Digite o bairro" {...field} value={field.value || ""} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+              render={({ field }) => <Input type="hidden" {...field} value={field.value || ""} />}
             />
-
+            <FormField
+              control={form.control}
+              name="cep"
+              render={({ field }) => <Input type="hidden" {...field} value={field.value || ""} />}
+            />
             <FormField
               control={form.control}
               name="cidade"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Cidade</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Digite a cidade" {...field} value={field.value || ""} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+              render={({ field }) => <Input type="hidden" {...field} value={field.value || ""} />}
             />
-
             <FormField
               control={form.control}
               name="estado"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Estado</FormLabel>
-                  <FormControl>
-                    <Input 
-                      placeholder="SP" 
-                      maxLength={2}
-                      {...field} 
-                      value={field.value || ""}
-                      onChange={(e) => {
-                        field.onChange(e.target.value.toUpperCase());
-                      }}
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+              render={({ field }) => <Input type="hidden" {...field} value={field.value || ""} />}
             />
           </div>
         </div>

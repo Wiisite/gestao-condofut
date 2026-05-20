@@ -71,6 +71,8 @@ export const alunos = pgTable("alunos", {
   cep: varchar("cep", { length: 10 }),
   cidade: varchar("cidade", { length: 100 }),
   estado: varchar("estado", { length: 2 }),
+  apartamento: varchar("apartamento", { length: 50 }),
+  bloco: varchar("bloco", { length: 50 }),
   responsavelId: integer("responsavel_id").references(() => responsaveis.id),
   nomeResponsavel: varchar("nome_responsavel", { length: 255 }),
   telefoneResponsavel: varchar("telefone_responsavel", { length: 20 }),

@@ -1,7 +1,7 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -11,10 +11,10 @@ import { Switch } from "@/components/ui/switch";
 import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import { insertAlunoSchema, type AlunoWithFilial } from "@shared/schema";
+import { insertAlunoSchema, type AlunoWithFilial, type Filial } from "@shared/schema";
 import { z } from "zod";
 import { useUnidadeAuth } from "@/contexts/UnidadeContext";
-import { Camera, Upload, X, User } from "lucide-react";
+import { Camera, Upload, X, User, MapPin, Building } from "lucide-react";
 
 const formSchema = z.object({
   nome: z.string().min(1, "Nome é obrigatório"),
@@ -29,6 +29,8 @@ const formSchema = z.object({
   cidade: z.string().optional(),
   estado: z.string().optional(),
   cep: z.string().optional(),
+  apartamento: z.string().optional(),
+  bloco: z.string().optional(),
   nomeResponsavel: z.string().optional(),
   telefoneResponsavel: z.string().optional(),
   observacoes: z.string().optional(),
@@ -73,6 +75,8 @@ export default function AlunoUnidadeForm({ initialData, onSuccess }: AlunoUnidad
       cidade: initialData?.cidade || "",
       estado: initialData?.estado || "",
       cep: initialData?.cep || "",
+      apartamento: (initialData as any)?.apartamento || "",
+      bloco: (initialData as any)?.bloco || "",
       nomeResponsavel: initialData?.nomeResponsavel || "",
       telefoneResponsavel: initialData?.telefoneResponsavel || "",
       observacoes: "",
@@ -84,6 +88,21 @@ export default function AlunoUnidadeForm({ initialData, onSuccess }: AlunoUnidad
       senhaResponsavel: "",
     },
   });
+
+  const { data: filial } = useQuery<Filial>({
+    queryKey: [`/api/filiais/${filialId}`],
+    enabled: !!filialId,
+  });
+
+  useEffect(() => {
+    if (filial && !initialData) {
+      form.setValue("endereco", filial.endereco || "");
+      form.setValue("bairro", filial.bairro || "");
+      form.setValue("cidade", filial.cidade || "São Paulo");
+      form.setValue("estado", filial.estado || "SP");
+      form.setValue("cep", filial.cep || "");
+    }
+  }, [filial, initialData, form]);
 
   const createAlunoMutation = useMutation({
     mutationFn: async (data: FormData) => {
@@ -405,110 +424,102 @@ export default function AlunoUnidadeForm({ initialData, onSuccess }: AlunoUnidad
           />
         </div>
 
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold">Endereço</h3>
+        {/* Seção de Endereço */}
+        <div className="border-t pt-6 mt-6">
+          <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center space-x-2">
+            <Building className="w-5 h-5 text-primary" />
+            <span>Endereço do Aluno (Condomínio)</span>
+          </h3>
+
+          {filial ? (
+            <div className="bg-neutral-50 border border-neutral-200/80 rounded-xl p-4 flex items-start space-x-3 mb-6 animate-in fade-in slide-in-from-top-2 duration-200">
+              <div className="p-2 bg-primary/10 rounded-lg text-primary mt-0.5">
+                <MapPin className="w-5 h-5" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h4 className="text-sm font-semibold text-neutral-800">Endereço da Unidade: {filial.nome}</h4>
+                <p className="text-xs text-neutral-600 mt-1">
+                  {filial.endereco}
+                  {filial.bairro ? `, ${filial.bairro}` : ""}
+                  {filial.cidade ? ` - ${filial.cidade}` : ""}
+                  {filial.estado ? `/${filial.estado}` : ""}
+                </p>
+                <span className="text-[10px] text-primary font-semibold mt-2.5 inline-block bg-primary/5 px-2 py-0.5 rounded-full border border-primary/10">
+                  Preenchido Automaticamente
+                </span>
+              </div>
+            </div>
+          ) : (
+            <div className="bg-neutral-50 border border-dashed border-neutral-200 rounded-xl p-4 flex items-center justify-center space-x-2 text-neutral-500 mb-6 text-sm">
+              <MapPin className="w-4 h-4 text-neutral-400" />
+              <span>Carregando endereço do condomínio...</span>
+            </div>
+          )}
+          
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <FormField
               control={form.control}
-              name="endereco"
+              name="apartamento"
               render={({ field }) => (
-                <FormItem className="md:col-span-2">
-                  <FormLabel>Endereço</FormLabel>
+                <FormItem>
+                  <FormLabel>Apartamento / Unidade</FormLabel>
                   <FormControl>
-                    <Input placeholder="Rua, número, complemento" {...field} />
+                    <Input 
+                      placeholder="Ex: 102, Bloco C" 
+                      {...field}
+                      value={field.value || ""}
+                    />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
               )}
             />
 
+            <FormField
+              control={form.control}
+              name="bloco"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Bloco / Torre</FormLabel>
+                  <FormControl>
+                    <Input 
+                      placeholder="Ex: Torre A" 
+                      {...field}
+                      value={field.value || ""}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+
+          {/* Campos escondidos de endereço para compatibilidade com o schema e o envio ao backend */}
+          <div className="hidden">
+            <FormField
+              control={form.control}
+              name="endereco"
+              render={({ field }) => <Input type="hidden" {...field} value={field.value || ""} />}
+            />
             <FormField
               control={form.control}
               name="bairro"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Bairro</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Bairro" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+              render={({ field }) => <Input type="hidden" {...field} value={field.value || ""} />}
             />
-
             <FormField
               control={form.control}
               name="cep"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>CEP</FormLabel>
-                  <FormControl>
-                    <Input placeholder="00000-000" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+              render={({ field }) => <Input type="hidden" {...field} value={field.value || ""} />}
             />
-
             <FormField
               control={form.control}
               name="cidade"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Cidade</FormLabel>
-                  <FormControl>
-                    <Input placeholder="Cidade" {...field} />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+              render={({ field }) => <Input type="hidden" {...field} value={field.value || ""} />}
             />
-
             <FormField
               control={form.control}
               name="estado"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>Estado</FormLabel>
-                  <FormControl>
-                    <Select onValueChange={field.onChange} value={field.value}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Selecione o estado" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="AC">Acre</SelectItem>
-                        <SelectItem value="AL">Alagoas</SelectItem>
-                        <SelectItem value="AP">Amapá</SelectItem>
-                        <SelectItem value="AM">Amazonas</SelectItem>
-                        <SelectItem value="BA">Bahia</SelectItem>
-                        <SelectItem value="CE">Ceará</SelectItem>
-                        <SelectItem value="DF">Distrito Federal</SelectItem>
-                        <SelectItem value="ES">Espírito Santo</SelectItem>
-                        <SelectItem value="GO">Goiás</SelectItem>
-                        <SelectItem value="MA">Maranhão</SelectItem>
-                        <SelectItem value="MT">Mato Grosso</SelectItem>
-                        <SelectItem value="MS">Mato Grosso do Sul</SelectItem>
-                        <SelectItem value="MG">Minas Gerais</SelectItem>
-                        <SelectItem value="PA">Pará</SelectItem>
-                        <SelectItem value="PB">Paraíba</SelectItem>
-                        <SelectItem value="PR">Paraná</SelectItem>
-                        <SelectItem value="PE">Pernambuco</SelectItem>
-                        <SelectItem value="PI">Piauí</SelectItem>
-                        <SelectItem value="RJ">Rio de Janeiro</SelectItem>
-                        <SelectItem value="RN">Rio Grande do Norte</SelectItem>
-                        <SelectItem value="RS">Rio Grande do Sul</SelectItem>
-                        <SelectItem value="RO">Rondônia</SelectItem>
-                        <SelectItem value="RR">Roraima</SelectItem>
-                        <SelectItem value="SC">Santa Catarina</SelectItem>
-                        <SelectItem value="SP">São Paulo</SelectItem>
-                        <SelectItem value="SE">Sergipe</SelectItem>
-                        <SelectItem value="TO">Tocantins</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+              render={({ field }) => <Input type="hidden" {...field} value={field.value || ""} />}
             />
           </div>
         </div>
