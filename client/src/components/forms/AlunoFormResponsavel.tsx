@@ -1,11 +1,11 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import type { AlunoWithFilial, InsertAluno, Filial } from "@shared/schema";
-import { Camera, ImageIcon, Loader2 } from "lucide-react";
+import { Camera, ImageIcon, Loader2, MapPin, Building } from "lucide-react";
 
 interface AlunoFormResponsavelProps {
   aluno: AlunoWithFilial | null;
@@ -34,6 +34,8 @@ export default function AlunoFormResponsavel({
     cep: aluno?.cep || '',
     cidade: aluno?.cidade || '',
     estado: aluno?.estado || '',
+    apartamento: (aluno as any)?.apartamento || '',
+    bloco: (aluno as any)?.bloco || '',
     dataNascimento: aluno?.dataNascimento || '',
     fotoUrl: aluno?.fotoUrl || '',
     filialId: aluno?.filialId || '',
@@ -41,6 +43,22 @@ export default function AlunoFormResponsavel({
     ativo: aluno?.ativo ?? true,
     dataMatricula: aluno?.dataMatricula || new Date().toISOString().split('T')[0]
   });
+
+  useEffect(() => {
+    if (formData.filialId && filiais && !aluno) {
+      const filialSelecionada = filiais.find(f => f.id === formData.filialId);
+      if (filialSelecionada) {
+        setFormData(prev => ({
+          ...prev,
+          endereco: filialSelecionada.endereco || "",
+          bairro: filialSelecionada.bairro || "",
+          cidade: filialSelecionada.cidade || "São Paulo",
+          estado: filialSelecionada.estado || "SP",
+          cep: filialSelecionada.cep || "",
+        }));
+      }
+    }
+  }, [formData.filialId, filiais, aluno]);
 
   const [isCapturing, setIsCapturing] = useState(false);
   const [stream, setStream] = useState<MediaStream | null>(null);
@@ -265,70 +283,61 @@ export default function AlunoFormResponsavel({
         </div>
       </div>
 
-      {/* Campo CEP primeiro para busca automática */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <Label htmlFor="cep">CEP</Label>
-          <Input
-            id="cep"
-            value={formData.cep}
-            onChange={(e) => {
-              const val = e.target.value;
-              const numbers = val.replace(/\D/g, '');
-              let formatted = numbers;
-              if (numbers.length > 5) {
-                formatted = numbers.slice(0, 5) + '-' + numbers.slice(5, 8);
-              }
-              setFormData(prev => ({ ...prev, cep: formatted }));
-              if (numbers.length === 8) {
-                handleCEPChange(numbers);
-              }
-            }}
-            onBlur={(e) => handleCEPChange(e.target.value)}
-            placeholder="00000-000"
-            maxLength={9}
-          />
-        </div>
-        <div>
-          <Label htmlFor="endereco">Endereço</Label>
-          <Input
-            id="endereco"
-            value={formData.endereco}
-            onChange={(e) => setFormData(prev => ({ ...prev, endereco: e.target.value }))}
-            placeholder="Endereço completo"
-          />
-        </div>
-      </div>
+      {/* Seção de Endereço */}
+      <div className="border-t pt-6 mt-6">
+        <h3 className="text-lg font-semibold text-gray-800 mb-4 flex items-center space-x-2">
+          <Building className="w-5 h-5 text-primary" />
+          <span>Endereço do Aluno (Condomínio)</span>
+        </h3>
 
-      {/* Campos de Endereço Detalhado */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div>
-          <Label htmlFor="bairro">Bairro</Label>
-          <Input
-            id="bairro"
-            value={formData.bairro}
-            onChange={(e) => setFormData(prev => ({ ...prev, bairro: e.target.value }))}
-            placeholder="Digite o bairro"
-          />
-        </div>
-        <div>
-          <Label htmlFor="cidade">Cidade</Label>
-          <Input
-            id="cidade"
-            value={formData.cidade}
-            onChange={(e) => setFormData(prev => ({ ...prev, cidade: e.target.value }))}
-            placeholder="Digite a cidade"
-          />
-        </div>
-        <div>
-          <Label htmlFor="estado">Estado</Label>
-          <Input
-            id="estado"
-            value={formData.estado}
-            onChange={(e) => setFormData(prev => ({ ...prev, estado: e.target.value }))}
-            placeholder="SP"
-            maxLength={2}
-          />
+        {(() => {
+          const selectedFilial = filiais?.find(f => f.id === formData.filialId);
+          return selectedFilial ? (
+            <div className="bg-neutral-50 border border-neutral-200/80 rounded-xl p-4 flex items-start space-x-3 mb-6 animate-in fade-in slide-in-from-top-2 duration-200">
+              <div className="p-2 bg-primary/10 rounded-lg text-primary mt-0.5">
+                <MapPin className="w-5 h-5" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <h4 className="text-sm font-semibold text-neutral-800">Endereço da Unidade: {selectedFilial.nome}</h4>
+                <p className="text-xs text-neutral-600 mt-1">
+                  {selectedFilial.endereco}
+                  {selectedFilial.bairro ? `, ${selectedFilial.bairro}` : ""}
+                  {selectedFilial.cidade ? ` - ${selectedFilial.cidade}` : ""}
+                  {selectedFilial.estado ? `/${selectedFilial.estado}` : ""}
+                </p>
+                <span className="text-[10px] text-primary font-semibold mt-2.5 inline-block bg-primary/5 px-2 py-0.5 rounded-full border border-primary/10">
+                  Preenchido Automaticamente
+                </span>
+              </div>
+            </div>
+          ) : (
+            <div className="bg-neutral-50 border border-dashed border-neutral-200 rounded-xl p-4 flex items-center justify-center space-x-2 text-neutral-500 mb-6 text-sm">
+              <MapPin className="w-4 h-4 text-neutral-400" />
+              <span>Selecione uma Unidade abaixo para carregar o endereço do condomínio</span>
+            </div>
+          );
+        })()}
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <Label htmlFor="apartamento">Apartamento / Unidade</Label>
+            <Input 
+              id="apartamento"
+              placeholder="Ex: 102, Bloco C" 
+              value={formData.apartamento || ""}
+              onChange={(e) => setFormData(prev => ({ ...prev, apartamento: e.target.value }))}
+            />
+          </div>
+
+          <div>
+            <Label htmlFor="bloco">Bloco / Torre</Label>
+            <Input 
+              id="bloco"
+              placeholder="Ex: Torre A" 
+              value={formData.bloco || ""}
+              onChange={(e) => setFormData(prev => ({ ...prev, bloco: e.target.value }))}
+            />
+          </div>
         </div>
       </div>
 
