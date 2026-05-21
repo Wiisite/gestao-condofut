@@ -410,7 +410,10 @@ export default function ResponsavelPortal() {
                     <Users className="w-16 h-12 text-blue-200 mx-auto mb-4" />
                     <h4 className="text-xl font-bold text-gray-800">Nenhum filho encontrado</h4>
                     <p className="text-gray-500 mb-6 max-w-sm mx-auto">Você ainda não tem filhos vinculados a este portal. Cadastre agora para começar a acompanhar.</p>
-                    <Button onClick={() => setShowAlunoForm(true)} className="bg-blue-600 hover:bg-blue-700">
+                    <Button onClick={() => {
+                      setActiveTab("alunos");
+                      setShowAlunoForm(true);
+                    }} className="bg-blue-600 hover:bg-blue-700">
                       <Plus className="w-4 h-4 mr-2" /> Cadastrar Meu Filho
                     </Button>
                   </Card>
@@ -498,35 +501,13 @@ export default function ResponsavelPortal() {
           <TabsContent value="alunos" className="space-y-6">
             <div className="flex justify-between items-center">
               <h2 className="text-2xl font-bold">Meus Filhos</h2>
-              <Dialog open={showAlunoForm} onOpenChange={setShowAlunoForm}>
-                <DialogTrigger asChild>
-                  <Button onClick={() => {
-                    setEditingAluno(null);
-                    setShowAlunoForm(true);
-                  }}>
-                    <Plus className="w-4 h-4 mr-2" />
-                    Cadastrar Filho
-                  </Button>
-                </DialogTrigger>
-                <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-                  <DialogHeader>
-                    <DialogTitle>
-                      {editingAluno ? 'Editar Aluno' : 'Cadastrar Novo Filho'}
-                    </DialogTitle>
-                  </DialogHeader>
-                  <AlunoFormResponsavel 
-                    aluno={editingAluno} 
-                    onSuccess={() => {
-                      setShowAlunoForm(false);
-                      setEditingAluno(null);
-                    }}
-                    filiais={filiais || []}
-                    responsavelId={responsavel?.id}
-                    createMutation={createAlunoMutation}
-                    updateMutation={updateAlunoMutation}
-                  />
-                </DialogContent>
-              </Dialog>
+              <Button onClick={() => {
+                setEditingAluno(null);
+                setShowAlunoForm(true);
+              }}>
+                <Plus className="w-4 h-4 mr-2" />
+                Cadastrar Filho
+              </Button>
             </div>
 
             {alunosLoading ? (
@@ -1589,6 +1570,28 @@ export default function ResponsavelPortal() {
               </Button>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Modal de Cadastro/Edição de Aluno */}
+      <Dialog open={showAlunoForm} onOpenChange={setShowAlunoForm}>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              {editingAluno ? 'Editar Aluno' : 'Cadastrar Novo Filho'}
+            </DialogTitle>
+          </DialogHeader>
+          <AlunoFormResponsavel 
+            aluno={editingAluno} 
+            onSuccess={() => {
+              setShowAlunoForm(false);
+              setEditingAluno(null);
+            }}
+            filiais={filiais || []}
+            responsavelId={responsavel?.id}
+            createMutation={createAlunoMutation}
+            updateMutation={updateAlunoMutation}
+          />
         </DialogContent>
       </Dialog>
     </div>
