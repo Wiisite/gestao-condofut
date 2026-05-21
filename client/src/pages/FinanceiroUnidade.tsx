@@ -158,7 +158,7 @@ export default function FinanceiroUnidade() {
               Registrar Pagamento
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-md">
+          <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>Registrar Pagamento</DialogTitle>
             </DialogHeader>

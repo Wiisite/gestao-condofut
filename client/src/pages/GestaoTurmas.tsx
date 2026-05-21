@@ -426,7 +426,7 @@ export default function GestaoTurmas() {
 
       {/* Dialog de Vinculação de Alunos */}
       <Dialog open={isVinculacaoDialogOpen} onOpenChange={setIsVinculacaoDialogOpen}>
-        <DialogContent className="max-w-4xl">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               Vincular Alunos à Turma: {selectedTurma?.nome}
@@ -492,7 +492,7 @@ export default function GestaoTurmas() {
 
       {/* Dialog de Lista de Chamada */}
       <Dialog open={isChamadaDialogOpen} onOpenChange={setIsChamadaDialogOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>Lista de Chamada</DialogTitle>
           </DialogHeader>

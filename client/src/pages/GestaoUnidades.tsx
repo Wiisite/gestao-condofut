@@ -243,7 +243,7 @@ export default function GestaoUnidades() {
               Nova Unidade
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
                 {selectedFilial ? "Editar Unidade" : "Nova Unidade"}
@@ -381,7 +381,7 @@ export default function GestaoUnidades() {
 
       {/* Dialog de Detalhes da Unidade */}
       <Dialog open={isViewingDetails} onOpenChange={setIsViewingDetails}>
-        <DialogContent className="max-w-4xl">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               Detalhes da Unidade: {selectedFilial?.nome}

@@ -84,7 +84,7 @@ export default function Professores() {
               Novo Professor
             </Button>
           </DialogTrigger>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
                 {editingProfessor ? "Editar Professor" : "Cadastrar Novo Professor"}
