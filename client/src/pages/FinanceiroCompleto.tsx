@@ -115,6 +115,7 @@ export default function FinanceiroCompleto() {
     estoque: "0",
     imagemUrl: "",
   });
+  const [isCriandoNovaCategoria, setIsCriandoNovaCategoria] = useState(false);
 
   // Queries
   const { data: pagamentos = [] } = useQuery<Pagamento[]>({
@@ -489,6 +490,9 @@ export default function FinanceiroCompleto() {
       estoque: String(uniforme.estoque || 0),
       imagemUrl: uniforme.imagemUrl || "",
     });
+    const categoriasPadrao = ["camisa", "short", "meias", "chuteira", "acessorios"];
+    const isPersonalizada = !categoriasPadrao.includes(uniforme.categoria);
+    setIsCriandoNovaCategoria(isPersonalizada);
     setDialogType("uniforme");
     setDialogOpen(true);
   };
@@ -657,6 +661,7 @@ export default function FinanceiroCompleto() {
         estoque: "0",
         imagemUrl: "",
       });
+      setIsCriandoNovaCategoria(false);
     }
     setDialogType(type);
     setDialogOpen(true);
@@ -2239,8 +2244,20 @@ export default function FinanceiroCompleto() {
                 <div>
                   <Label htmlFor="categoria">Categoria</Label>
                   <Select 
-                    value={uniformeForm.categoria}
-                    onValueChange={(value) => setUniformeForm(prev => ({ ...prev, categoria: value }))}
+                    value={
+                      ["camisa", "short", "meias", "chuteira", "acessorios"].includes(uniformeForm.categoria)
+                        ? uniformeForm.categoria
+                        : (uniformeForm.categoria ? "outra" : "")
+                    }
+                    onValueChange={(value) => {
+                      if (value === "outra") {
+                        setUniformeForm(prev => ({ ...prev, categoria: "" }));
+                        setIsCriandoNovaCategoria(true);
+                      } else {
+                        setUniformeForm(prev => ({ ...prev, categoria: value }));
+                        setIsCriandoNovaCategoria(false);
+                      }
+                    }}
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Selecione a categoria" />
@@ -2251,10 +2268,23 @@ export default function FinanceiroCompleto() {
                       <SelectItem value="meias">Meias</SelectItem>
                       <SelectItem value="chuteira">Chuteira</SelectItem>
                       <SelectItem value="acessorios">Acessórios</SelectItem>
+                      <SelectItem value="outra">+ Criar Nova Categoria...</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
               </div>
+
+              {isCriandoNovaCategoria && (
+                <div className="space-y-2 mt-2 animate-in fade-in slide-in-from-top-1 duration-200">
+                  <Label htmlFor="novaCategoria">Nome da Nova Categoria</Label>
+                  <Input 
+                    id="novaCategoria" 
+                    placeholder="Digite o nome da nova categoria (ex: Mochilas)" 
+                    value={uniformeForm.categoria}
+                    onChange={(e) => setUniformeForm(prev => ({ ...prev, categoria: e.target.value }))}
+                  />
+                </div>
+              )}
               
               {/* Campo de Imagem do Uniforme */}
               <div>
