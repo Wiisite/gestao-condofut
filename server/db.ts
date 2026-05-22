@@ -53,6 +53,13 @@ export async function runMigrations() {
       ADD COLUMN IF NOT EXISTS papel VARCHAR(50) DEFAULT 'admin';
     `);
 
+    // Adicionar colunas de endereço do aluno (apartamento/bloco)
+    await pool.query(`
+      ALTER TABLE alunos 
+      ADD COLUMN IF NOT EXISTS apartamento VARCHAR(50),
+      ADD COLUMN IF NOT EXISTS bloco VARCHAR(50);
+    `);
+
     // Adicionar colunas do Mercado Pago
     await pool.query(`
       ALTER TABLE pagamentos 

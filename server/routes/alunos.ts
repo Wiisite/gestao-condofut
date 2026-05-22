@@ -97,12 +97,20 @@ router.post("/", async (req, res) => {
     
     const aluno = await storage.createAluno(validatedData);
     res.status(201).json(aluno);
-  } catch (error) {
+  } catch (error: any) {
     if (error instanceof z.ZodError) {
-      return res.status(400).json({ message: "Invalid data", errors: error.errors });
+      console.error("Zod validation error creating aluno:", JSON.stringify(error.errors));
+      return res.status(400).json({ message: "Dados inválidos", errors: error.errors });
     }
-    console.error("Error creating aluno:", error);
-    res.status(500).json({ message: "Failed to create aluno" });
+    console.error("Error creating aluno:", error.message || error);
+    console.error("Body recebido:", JSON.stringify(req.body, null, 2));
+    
+    // Tratar erro de unique constraint (CPF duplicado)
+    if (error.code === '23505' || (error.message && error.message.includes('unique'))) {
+      return res.status(409).json({ message: "CPF já cadastrado para outro aluno" });
+    }
+    
+    res.status(500).json({ message: error.message || "Failed to create aluno" });
   }
 });
 
