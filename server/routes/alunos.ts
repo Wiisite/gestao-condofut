@@ -51,7 +51,39 @@ router.post("/", async (req, res) => {
       return res.status(401).json({ message: "Authentication required" });
     }
 
-    const validatedData = insertAlunoSchema.parse(req.body);
+    // Sanitizar dados: remover strings vazias (Zod/Drizzle espera undefined, não '' ou null)
+    const body = { ...req.body };
+    const optionalStringFields = ['cpf', 'rg', 'email', 'telefone', 'dataNascimento', 'dataMatricula', 
+      'fotoUrl', 'endereco', 'bairro', 'cep', 'cidade', 'estado', 'apartamento', 'bloco',
+      'nomeResponsavel', 'telefoneResponsavel'];
+    
+    for (const field of optionalStringFields) {
+      if (body[field] === '' || body[field] === null || body[field] === undefined) {
+        delete body[field];
+      }
+    }
+    
+    // Converter filialId e responsavelId para número ou remover
+    if (body.filialId === '' || body.filialId === null || body.filialId === undefined || body.filialId === 0) {
+      delete body.filialId;
+    } else {
+      body.filialId = typeof body.filialId === 'string' ? parseInt(body.filialId) : body.filialId;
+    }
+    
+    if (body.responsavelId === '' || body.responsavelId === null || body.responsavelId === undefined || body.responsavelId === 0) {
+      delete body.responsavelId;
+    } else {
+      body.responsavelId = typeof body.responsavelId === 'string' ? parseInt(body.responsavelId) : body.responsavelId;
+    }
+
+    // Remover campo 'ativo' se for boolean (vem como true/false do form)
+    if (typeof body.ativo === 'boolean') {
+      // mantém
+    } else if (body.ativo === '' || body.ativo === null || body.ativo === undefined) {
+      delete body.ativo;
+    }
+
+    const validatedData = insertAlunoSchema.parse(body);
     
     // Se for gestor, forçar o filialId da sua unidade
     if (isGestor && !isAdmin) {
@@ -75,6 +107,35 @@ router.post("/", async (req, res) => {
 });
 
 router.put("/:id", async (req, res) => {
+  try {
+    const isAdmin = req.session.adminId;
+    const isGestor = req.session.gestorUnidadeId && req.session.filialId;
+    const isResponsavel = req.session.responsavelId;
+    
+    if (!isAdmin && !isGestor && !isResponsavel) {
+      return res.status(401).json({ message: "Authentication required" });
+    }
+
+    const id = parseInt(req.params.id);
+    
+    // Se for responsável, verificar se o aluno é dele
+    if (isResponsavel && !isAdmin) {
+      const alunoAtual = await storage.getAluno(id);
+      if (!alunoAtual || alunoAtual.responsavelId !== isResponsavel) {
+        return res.status(403).json({ message: "Não autorizado a alterar este aluno" });
+      }
+    }
+
+    const aluno = await storage.updateAluno(id, req.body);
+    res.json(aluno);
+  } catch (error) {
+    console.error("Error updating aluno:", error);
+    res.status(500).json({ message: "Failed to update aluno" });
+  }
+});
+
+// PATCH para compatibilidade com frontend
+router.patch("/:id", async (req, res) => {
   try {
     const isAdmin = req.session.adminId;
     const isGestor = req.session.gestorUnidadeId && req.session.filialId;
