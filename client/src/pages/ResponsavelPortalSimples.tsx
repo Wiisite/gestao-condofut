@@ -34,7 +34,9 @@ import {
   Camera,
   ImageIcon,
   Package,
-  Trash2
+  Trash2,
+  ChevronLeft,
+  ChevronRight
 } from "lucide-react";
 import { InterLogo } from "@/components/InterLogo";
 
@@ -82,6 +84,37 @@ export default function ResponsavelPortal() {
   const [checkoutMensalidade, setCheckoutMensalidade] = useState<any | null>(null);
   const [selectedAlunoExtrato, setSelectedAlunoExtrato] = useState<number | null>(null);
   const [checkoutEvento, setCheckoutEvento] = useState<any | null>(null);
+  const [uniformeSlideIdx, setUniformeSlideIdx] = useState<Record<number, number>>({});
+
+  // Converte campo imagemUrl em array (suporta JSON array OU string única)
+  const parseImagens = (raw: string | null | undefined): string[] => {
+    if (!raw) return [];
+    const trimmed = String(raw).trim();
+    if (trimmed.startsWith("[")) {
+      try {
+        const arr = JSON.parse(trimmed);
+        return Array.isArray(arr) ? arr.filter(Boolean) : [];
+      } catch {
+        return [trimmed];
+      }
+    }
+    return [trimmed];
+  };
+
+  // Converte string de tamanhos (CSV ou JSON) em array
+  const parseTamanhos = (raw: string | null | undefined): string[] => {
+    if (!raw) return [];
+    const trimmed = String(raw).trim();
+    if (trimmed.startsWith("[")) {
+      try {
+        const arr = JSON.parse(trimmed);
+        return Array.isArray(arr) ? arr.map(String).filter(Boolean) : [];
+      } catch {
+        return trimmed.split(",").map(s => s.trim()).filter(Boolean);
+      }
+    }
+    return trimmed.split(",").map(s => s.trim()).filter(Boolean);
+  };
 
   // Queries
   const { data: filiais } = useQuery<Filial[]>({
@@ -956,21 +989,60 @@ export default function ResponsavelPortal() {
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                    {uniformes.filter((u: any) => u.ativo !== false).map((uniforme: any) => (
+                    {uniformes.filter((u: any) => u.ativo !== false).map((uniforme: any) => {
+                      const imagens = parseImagens(uniforme.imagemUrl);
+                      const idx = Math.min(uniformeSlideIdx[uniforme.id] || 0, Math.max(imagens.length - 1, 0));
+                      const goPrev = () => setUniformeSlideIdx(prev => ({ ...prev, [uniforme.id]: (idx - 1 + imagens.length) % imagens.length }));
+                      const goNext = () => setUniformeSlideIdx(prev => ({ ...prev, [uniforme.id]: (idx + 1) % imagens.length }));
+                      return (
                       <Card key={uniforme.id} className="overflow-hidden border hover:shadow-lg transition-shadow">
-                        {uniforme.imagemUrl ? (
-                          <div className="w-full h-72 bg-white flex items-center justify-center p-2">
-                            <img 
-                              src={uniforme.imagemUrl} 
-                              alt={uniforme.nome}
-                              className="max-w-full max-h-full object-contain"
-                            />
-                          </div>
-                        ) : (
-                          <div className="w-full h-72 bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center">
-                            <ShoppingBag className="w-16 h-16 text-blue-200" />
-                          </div>
-                        )}
+                        <div className="relative w-full h-72 bg-white flex items-center justify-center p-2 group">
+                          {imagens.length > 0 ? (
+                            <>
+                              <img
+                                src={imagens[idx]}
+                                alt={uniforme.nome}
+                                className="max-w-full max-h-full object-contain"
+                                onError={(e: any) => { e.target.src = 'https://placehold.co/400x400?text=Sem+Imagem'; }}
+                              />
+                              {imagens.length > 1 && (
+                                <>
+                                  <button
+                                    type="button"
+                                    onClick={goPrev}
+                                    className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white rounded-full p-1.5 shadow opacity-0 group-hover:opacity-100 transition"
+                                    aria-label="Imagem anterior"
+                                  >
+                                    <ChevronLeft className="w-5 h-5" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={goNext}
+                                    className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white rounded-full p-1.5 shadow opacity-0 group-hover:opacity-100 transition"
+                                    aria-label="Próxima imagem"
+                                  >
+                                    <ChevronRight className="w-5 h-5" />
+                                  </button>
+                                  <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1.5">
+                                    {imagens.map((_, i) => (
+                                      <button
+                                        key={i}
+                                        type="button"
+                                        onClick={() => setUniformeSlideIdx(prev => ({ ...prev, [uniforme.id]: i }))}
+                                        className={`w-2 h-2 rounded-full transition ${i === idx ? "bg-blue-600" : "bg-white/70 hover:bg-white"}`}
+                                        aria-label={`Ir para imagem ${i + 1}`}
+                                      />
+                                    ))}
+                                  </div>
+                                </>
+                              )}
+                            </>
+                          ) : (
+                            <div className="w-full h-full bg-gradient-to-br from-blue-50 to-blue-100 flex items-center justify-center">
+                              <ShoppingBag className="w-16 h-16 text-blue-200" />
+                            </div>
+                          )}
+                        </div>
                         <CardContent className="p-4">
                           <div className="space-y-3">
                             <div>
@@ -980,18 +1052,26 @@ export default function ResponsavelPortal() {
                               )}
                             </div>
                             
-                            <div className="flex flex-wrap gap-2">
-                              {uniforme.tamanhos && (
-                                <Badge variant="outline" className="text-xs">
-                                  Tamanhos: {uniforme.tamanhos}
-                                </Badge>
-                              )}
-                              {uniforme.cores && (
-                                <Badge variant="outline" className="text-xs">
-                                  Cores: {uniforme.cores}
-                                </Badge>
-                              )}
-                            </div>
+                            {parseTamanhos(uniforme.tamanhos).length > 0 && (
+                              <div>
+                                <p className="text-xs text-gray-500 mb-1">Tamanhos disponíveis:</p>
+                                <div className="flex flex-wrap gap-1">
+                                  {parseTamanhos(uniforme.tamanhos).map((t: string) => (
+                                    <Badge key={t} variant="outline" className="text-xs">{t}</Badge>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                            {parseTamanhos(uniforme.cores).length > 0 && (
+                              <div>
+                                <p className="text-xs text-gray-500 mb-1">Cores:</p>
+                                <div className="flex flex-wrap gap-1">
+                                  {parseTamanhos(uniforme.cores).map((c: string) => (
+                                    <Badge key={c} variant="outline" className="text-xs">{c}</Badge>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
                             
                             <div className="flex items-center justify-between pt-2 border-t">
                               <div>
@@ -1010,8 +1090,8 @@ export default function ResponsavelPortal() {
                                 onClick={() => {
                                   setCheckoutUniforme(uniforme);
                                   setCheckoutData({
-                                    tamanho: uniforme.tamanhos?.split(',')[0]?.trim() || "",
-                                    cor: uniforme.cores?.split(',')[0]?.trim() || "",
+                                    tamanho: parseTamanhos(uniforme.tamanhos)[0] || "",
+                                    cor: parseTamanhos(uniforme.cores)[0] || "",
                                     quantidade: 1,
                                     alunoId: alunosDoResponsavel[0]?.id || 0,
                                     formaPagamento: "pix"
@@ -1025,7 +1105,8 @@ export default function ResponsavelPortal() {
                           </div>
                         </CardContent>
                       </Card>
-                    ))}
+                      );
+                    })}
                   </div>
                 )}
               </CardContent>
@@ -1067,8 +1148,8 @@ export default function ResponsavelPortal() {
                           <CardContent className="p-4">
                             <div className="flex items-start justify-between">
                               <div className="flex gap-4">
-                                {uniforme?.imagemUrl ? (
-                                  <img src={uniforme.imagemUrl} alt={uniforme.nome} className="w-16 h-16 object-cover rounded" />
+                                {parseImagens(uniforme?.imagemUrl).length > 0 ? (
+                                  <img src={parseImagens(uniforme?.imagemUrl)[0]} alt={uniforme?.nome} className="w-16 h-16 object-cover rounded" />
                                 ) : (
                                   <div className="w-16 h-16 bg-gray-100 rounded flex items-center justify-center">
                                     <ShoppingBag className="w-8 h-8 text-gray-300" />
@@ -1256,9 +1337,9 @@ export default function ResponsavelPortal() {
             <div className="space-y-4">
               {/* Produto */}
               <div className="flex gap-4 p-3 bg-gray-50 rounded-lg">
-                {checkoutUniforme.imagemUrl ? (
+                {parseImagens(checkoutUniforme.imagemUrl).length > 0 ? (
                   <img 
-                    src={checkoutUniforme.imagemUrl} 
+                    src={parseImagens(checkoutUniforme.imagemUrl)[0]} 
                     alt={checkoutUniforme.nome}
                     className="w-20 h-20 object-cover rounded"
                   />
@@ -1291,22 +1372,22 @@ export default function ResponsavelPortal() {
               </div>
 
               {/* Tamanho */}
-              {checkoutUniforme.tamanhos && (
+              {parseTamanhos(checkoutUniforme.tamanhos).length > 0 && (
                 <div>
                   <label className="text-sm font-medium">Tamanho</label>
                   <div className="flex flex-wrap gap-2 mt-1">
-                    {checkoutUniforme.tamanhos.split(',').map((tam: string) => (
+                    {parseTamanhos(checkoutUniforme.tamanhos).map((tam: string) => (
                       <button
-                        key={tam.trim()}
+                        key={tam}
                         type="button"
                         className={`px-3 py-1 border rounded-md text-sm ${
-                          checkoutData.tamanho === tam.trim() 
+                          checkoutData.tamanho === tam 
                             ? 'bg-blue-600 text-white border-blue-600' 
                             : 'bg-white hover:bg-gray-50'
                         }`}
-                        onClick={() => setCheckoutData({...checkoutData, tamanho: tam.trim()})}
+                        onClick={() => setCheckoutData({...checkoutData, tamanho: tam})}
                       >
-                        {tam.trim()}
+                        {tam}
                       </button>
                     ))}
                   </div>
@@ -1314,11 +1395,11 @@ export default function ResponsavelPortal() {
               )}
 
               {/* Cor */}
-              {checkoutUniforme.cores && (
+              {parseTamanhos(checkoutUniforme.cores).length > 0 && (
                 <div>
                   <label className="text-sm font-medium">Cor</label>
                   <div className="flex flex-wrap gap-2 mt-1">
-                    {checkoutUniforme.cores.split(',').map((cor: string) => (
+                    {parseTamanhos(checkoutUniforme.cores).map((cor: string) => (
                       <button
                         key={cor.trim()}
                         type="button"
