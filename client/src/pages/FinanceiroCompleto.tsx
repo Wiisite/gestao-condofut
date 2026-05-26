@@ -1570,44 +1570,101 @@ export default function FinanceiroCompleto() {
           </div>
 
           <div className="grid gap-4">
-            {eventos.map((evento) => (
-              <Card key={evento.id}>
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <h3 className="font-semibold">{evento.nome}</h3>
-                      <p className="text-sm text-muted-foreground">{evento.descricao}</p>
-                      <div className="flex items-center gap-4 mt-2">
-                        <div className="flex items-center gap-1">
-                          <Calendar className="w-4 h-4" />
-                          <span className="text-sm">
-                            {new Date(evento.dataEvento).toLocaleDateString('pt-BR')}
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-1">
-                          <Users className="w-4 h-4" />
-                          <span className="text-sm">
-                            {evento.vagasMaximas} vagas
-                          </span>
+            {eventos.map((evento) => {
+              const inscricoesDoEvento = inscricoesEventos.filter(i => i.eventoId === evento.id);
+              return (
+                <Card key={evento.id}>
+                  <CardContent className="p-4">
+                    <div className="flex items-start justify-between gap-4">
+                      <div className="flex-1">
+                        <h3 className="font-semibold">{evento.nome}</h3>
+                        <p className="text-sm text-muted-foreground">{evento.descricao}</p>
+                        <div className="flex items-center gap-4 mt-2 flex-wrap">
+                          <div className="flex items-center gap-1">
+                            <Calendar className="w-4 h-4" />
+                            <span className="text-sm">
+                              {new Date(evento.dataEvento).toLocaleDateString('pt-BR')}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <Users className="w-4 h-4" />
+                            <span className="text-sm">
+                              {inscricoesDoEvento.length} / {evento.vagasMaximas} vagas
+                            </span>
+                          </div>
                         </div>
                       </div>
+                      <div className="text-right">
+                        <p className="text-lg font-bold text-purple-600">
+                          R$ {parseFloat(evento.preco || "0").toFixed(2)}
+                        </p>
+                        <Button
+                          onClick={() => openDialog("inscricao-evento")}
+                          size="sm"
+                          className="mt-2"
+                        >
+                          Inscrever Aluno
+                        </Button>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <p className="text-lg font-bold text-purple-600">
-                        R$ {parseFloat(evento.preco || "0").toFixed(2)}
-                      </p>
-                      <Button 
-                        onClick={() => openDialog("inscricao-evento")} 
-                        size="sm"
-                        className="mt-2"
-                      >
-                        Inscrever Aluno
-                      </Button>
+
+                    {/* Lista de alunos inscritos */}
+                    <div className="mt-4 border-t pt-4">
+                      <h4 className="text-sm font-semibold mb-3">
+                        Alunos inscritos ({inscricoesDoEvento.length})
+                      </h4>
+                      {inscricoesDoEvento.length === 0 ? (
+                        <p className="text-sm text-muted-foreground">
+                          Nenhum aluno inscrito ainda.
+                        </p>
+                      ) : (
+                        <div className="space-y-2">
+                          {inscricoesDoEvento.map((inscricao) => {
+                            const aluno = alunos.find(a => a.id === inscricao.alunoId);
+                            const isPago = inscricao.statusPagamento === "pago";
+                            return (
+                              <div
+                                key={inscricao.id}
+                                className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-3 rounded-md bg-muted/40"
+                              >
+                                <div className="space-y-0.5">
+                                  <p className="font-medium text-sm">
+                                    {aluno?.nome || "Aluno não encontrado"}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground">
+                                    Unidade: {aluno?.filial?.nome || "Sem unidade"}
+                                  </p>
+                                  <p className="text-xs text-muted-foreground">
+                                    Inscrito em:{" "}
+                                    {inscricao.dataInscricao
+                                      ? new Date(inscricao.dataInscricao).toLocaleDateString('pt-BR')
+                                      : 'N/A'}
+                                  </p>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <Badge variant={isPago ? "default" : "secondary"}>
+                                    {inscricao.statusPagamento}
+                                  </Badge>
+                                  {!isPago && (
+                                    <Button
+                                      size="sm"
+                                      onClick={() => confirmarPagamentoEventoMutation.mutate(inscricao.id)}
+                                      disabled={confirmarPagamentoEventoMutation.isPending}
+                                    >
+                                      Confirmar Pagamento
+                                    </Button>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         </TabsContent>
 
