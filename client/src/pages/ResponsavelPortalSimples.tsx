@@ -14,8 +14,6 @@ import type { AlunoWithFilial, InsertAluno, Filial } from "@shared/schema";
 import AlunoFormResponsavel from "@/components/forms/AlunoFormResponsavel";
 import { MercadoPagoBrick } from "@/components/pagamento/MercadoPagoBrick";
 import { Input } from "@/components/ui/input";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
 import { 
   Bell, 
   User, 
@@ -42,7 +40,6 @@ import { InterLogo } from "@/components/InterLogo";
 
 export default function ResponsavelPortal() {
   const [activeTab, setActiveTab] = useState("dashboard");
-  const [isDemoMode, setIsDemoMode] = useState(false);
   const [perfilForm, setPerfilForm] = useState({
     nome: "",
     email: "",
@@ -341,18 +338,6 @@ export default function ResponsavelPortal() {
               </div>
             </div>
             <div className="flex items-center gap-4">
-              <div className="flex items-center space-x-2 bg-blue-100 px-3 py-2 rounded-full border border-blue-200 shadow-sm">
-                <Switch 
-                  id="demo-mode" 
-                  checked={isDemoMode} 
-                  onCheckedChange={setIsDemoMode}
-                  className="data-[state=checked]:bg-amber-500"
-                />
-                <Label htmlFor="demo-mode" className="text-[10px] sm:text-xs font-bold text-blue-800 cursor-pointer uppercase tracking-wider">
-                  {isDemoMode ? "Modo Demo Ativo" : "Modo Demonstração"}
-                </Label>
-              </div>
-
               <Button onClick={handleLogout} variant="outline" size="sm" className="text-xs sm:text-sm">
                 <LogOut className="w-3 h-3 sm:w-4 sm:h-4 mr-1 sm:mr-2" />
                 <span className="hidden sm:inline">Sair</span>
@@ -1395,7 +1380,6 @@ export default function ResponsavelPortal() {
               {/* Pagamento Transparente com Mercado Pago */}
               <div className="mt-4">
                 <MercadoPagoBrick
-                  isDemo={isDemoMode}
                   amount={parseFloat(checkoutUniforme.preco || "0") * checkoutData.quantidade}
                   description={`${checkoutUniforme.nome} - Tam: ${checkoutData.tamanho} - Qtd: ${checkoutData.quantidade}`}
                   payerEmail={responsavel?.email || "contato@escolafutebol.com"}
@@ -1446,7 +1430,6 @@ export default function ResponsavelPortal() {
               </div>
 
               <MercadoPagoBrick
-                isDemo={isDemoMode}
                 amount={parseFloat(checkoutMensalidade.valor)}
                 description={`Mensalidade ${checkoutMensalidade.mesNome} - ${checkoutMensalidade.alunoNome}`}
                 payerEmail={responsavel?.email || "contato@escolafutebol.com"}
@@ -1528,7 +1511,6 @@ export default function ResponsavelPortal() {
               {/* Pagamento */}
               {parseFloat(checkoutEvento.preco || "0") > 0 ? (
                 <MercadoPagoBrick
-                  isDemo={isDemoMode}
                   amount={parseFloat(checkoutEvento.preco || "0")}
                   description={`Evento: ${checkoutEvento.nome}`}
                   payerEmail={responsavel?.email || "contato@escolafutebol.com"}
