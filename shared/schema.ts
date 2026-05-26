@@ -237,6 +237,7 @@ export const inscricoesEventos = pgTable("inscricoes_eventos", {
   alunoId: integer("aluno_id").references(() => alunos.id),
   dataInscricao: timestamp("data_inscricao").defaultNow(),
   statusPagamento: varchar("status_pagamento", { length: 20 }).default("pendente"), // pendente, pago, cancelado
+  statusConfirmacao: varchar("status_confirmacao", { length: 20 }).default("inscrito"), // inscrito, confirmado, cancelado
   mercadopagoId: varchar("mercadopago_id", { length: 255 }),
   mercadopagoStatus: varchar("mercadopago_status", { length: 50 }),
   observacoes: text("observacoes"),

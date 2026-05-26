@@ -103,6 +103,15 @@ export default function FinanceiroCompleto() {
     destinatario: "todos",
   });
 
+  // Estado para inscrição em evento
+  const [inscricaoEventoForm, setInscricaoEventoForm] = useState({
+    alunoId: 0,
+    eventoId: 0,
+    statusPagamento: "pendente",
+    statusConfirmacao: "inscrito",
+    observacoes: "",
+  });
+
   // Estado para uniformes
   const [editingUniformeId, setEditingUniformeId] = useState<number | null>(null);
   const [uniformeForm, setUniformeForm] = useState({
@@ -662,13 +671,33 @@ export default function FinanceiroCompleto() {
     },
   });
 
+  const confirmarPresencaEventoMutation = useMutation({
+    mutationFn: async (id: number) => {
+      return await apiRequest("PATCH", `/api/inscricoes-eventos/${id}`, { statusConfirmacao: "confirmado" });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/inscricoes-eventos"] });
+      toast({
+        title: "Presença confirmada",
+        description: "A baixa do aluno no evento foi realizada com sucesso.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erro",
+        description: error.message || "Não foi possível confirmar a presença.",
+        variant: "destructive",
+      });
+    },
+  });
+
   // Cálculos financeiros
   const totalPagamentos = pagamentos.reduce((sum, p) => sum + parseFloat(p.valor || "0"), 0);
   const totalUniformes = comprasUniformes.reduce((sum, c) => sum + parseFloat(c.preco || "0") * (c.quantidade || 1), 0);
   const totalEventos = inscricoesEventos.length * 50; // Valor médio por evento
   const receitaTotal = totalPagamentos + totalUniformes + totalEventos;
 
-  const openDialog = (type: typeof dialogType) => {
+  const openDialog = (type: typeof dialogType, eventoId?: number) => {
     if (type === "uniforme") {
       setEditingUniformeId(null);
       setUniformeForm({
@@ -682,6 +711,15 @@ export default function FinanceiroCompleto() {
         imagemUrl: "",
       });
       setIsCriandoNovaCategoria(false);
+    }
+    if (type === "inscricao-evento") {
+      setInscricaoEventoForm({
+        alunoId: 0,
+        eventoId: eventoId || 0,
+        statusPagamento: "pendente",
+        statusConfirmacao: "inscrito",
+        observacoes: "",
+      });
     }
     setDialogType(type);
     setDialogOpen(true);
@@ -1570,101 +1608,44 @@ export default function FinanceiroCompleto() {
           </div>
 
           <div className="grid gap-4">
-            {eventos.map((evento) => {
-              const inscricoesDoEvento = inscricoesEventos.filter(i => i.eventoId === evento.id);
-              return (
-                <Card key={evento.id}>
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1">
-                        <h3 className="font-semibold">{evento.nome}</h3>
-                        <p className="text-sm text-muted-foreground">{evento.descricao}</p>
-                        <div className="flex items-center gap-4 mt-2 flex-wrap">
-                          <div className="flex items-center gap-1">
-                            <Calendar className="w-4 h-4" />
-                            <span className="text-sm">
-                              {new Date(evento.dataEvento).toLocaleDateString('pt-BR')}
-                            </span>
-                          </div>
-                          <div className="flex items-center gap-1">
-                            <Users className="w-4 h-4" />
-                            <span className="text-sm">
-                              {inscricoesDoEvento.length} / {evento.vagasMaximas} vagas
-                            </span>
-                          </div>
+            {eventos.map((evento) => (
+              <Card key={evento.id}>
+                <CardContent className="p-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex-1">
+                      <h3 className="font-semibold">{evento.nome}</h3>
+                      <p className="text-sm text-muted-foreground">{evento.descricao}</p>
+                      <div className="flex items-center gap-4 mt-2">
+                        <div className="flex items-center gap-1">
+                          <Calendar className="w-4 h-4" />
+                          <span className="text-sm">
+                            {new Date(evento.dataEvento).toLocaleDateString('pt-BR')}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1">
+                          <Users className="w-4 h-4" />
+                          <span className="text-sm">
+                            {evento.vagasMaximas} vagas
+                          </span>
                         </div>
                       </div>
-                      <div className="text-right">
-                        <p className="text-lg font-bold text-purple-600">
-                          R$ {parseFloat(evento.preco || "0").toFixed(2)}
-                        </p>
-                        <Button
-                          onClick={() => openDialog("inscricao-evento")}
-                          size="sm"
-                          className="mt-2"
-                        >
-                          Inscrever Aluno
-                        </Button>
-                      </div>
                     </div>
-
-                    {/* Lista de alunos inscritos */}
-                    <div className="mt-4 border-t pt-4">
-                      <h4 className="text-sm font-semibold mb-3">
-                        Alunos inscritos ({inscricoesDoEvento.length})
-                      </h4>
-                      {inscricoesDoEvento.length === 0 ? (
-                        <p className="text-sm text-muted-foreground">
-                          Nenhum aluno inscrito ainda.
-                        </p>
-                      ) : (
-                        <div className="space-y-2">
-                          {inscricoesDoEvento.map((inscricao) => {
-                            const aluno = alunos.find(a => a.id === inscricao.alunoId);
-                            const isPago = inscricao.statusPagamento === "pago";
-                            return (
-                              <div
-                                key={inscricao.id}
-                                className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 p-3 rounded-md bg-muted/40"
-                              >
-                                <div className="space-y-0.5">
-                                  <p className="font-medium text-sm">
-                                    {aluno?.nome || "Aluno não encontrado"}
-                                  </p>
-                                  <p className="text-xs text-muted-foreground">
-                                    Unidade: {aluno?.filial?.nome || "Sem unidade"}
-                                  </p>
-                                  <p className="text-xs text-muted-foreground">
-                                    Inscrito em:{" "}
-                                    {inscricao.dataInscricao
-                                      ? new Date(inscricao.dataInscricao).toLocaleDateString('pt-BR')
-                                      : 'N/A'}
-                                  </p>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <Badge variant={isPago ? "default" : "secondary"}>
-                                    {inscricao.statusPagamento}
-                                  </Badge>
-                                  {!isPago && (
-                                    <Button
-                                      size="sm"
-                                      onClick={() => confirmarPagamentoEventoMutation.mutate(inscricao.id)}
-                                      disabled={confirmarPagamentoEventoMutation.isPending}
-                                    >
-                                      Confirmar Pagamento
-                                    </Button>
-                                  )}
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      )}
+                    <div className="text-right">
+                      <p className="text-lg font-bold text-purple-600">
+                        R$ {parseFloat(evento.preco || "0").toFixed(2)}
+                      </p>
+                      <Button 
+                        onClick={() => openDialog("inscricao-evento", evento.id)} 
+                        size="sm"
+                        className="mt-2"
+                      >
+                        Inscrever Aluno
+                      </Button>
                     </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
           </div>
         </TabsContent>
 
@@ -1672,39 +1653,73 @@ export default function FinanceiroCompleto() {
         <TabsContent value="inscricoes" className="space-y-4">
           <h2 className="text-xl font-semibold">Inscrições em Eventos</h2>
           <div className="grid gap-4">
+            {inscricoesEventos.length === 0 && (
+              <Card>
+                <CardContent className="p-8 text-center text-muted-foreground">
+                  <Calendar className="w-10 h-10 mx-auto mb-2 opacity-50" />
+                  <p>Nenhuma inscrição em evento ainda.</p>
+                </CardContent>
+              </Card>
+            )}
             {inscricoesEventos.map((inscricao) => {
               const aluno = alunos.find(a => a.id === inscricao.alunoId);
               const evento = eventos.find(e => e.id === inscricao.eventoId);
               const isPago = inscricao.statusPagamento === "pago";
+              const isConfirmado = (inscricao as any).statusConfirmacao === "confirmado";
               return (
-                <Card key={inscricao.id}>
+                <Card key={inscricao.id} className={isConfirmado ? "border-green-300 bg-green-50/30" : ""}>
                   <CardContent className="p-4">
-                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                      <div className="space-y-1">
-                        <h3 className="font-semibold">{aluno?.nome || "Aluno não encontrado"}</h3>
-                        <p className="text-sm text-muted-foreground">
-                          <span className="font-medium">Unidade:</span> {aluno?.filial?.nome || "Sem unidade"}
-                        </p>
-                        <p className="text-sm text-muted-foreground">
+                    <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+                      <div className="space-y-1 flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <h3 className="font-semibold text-base">{aluno?.nome || "Aluno não encontrado"}</h3>
+                          {aluno?.filial && (
+                            <Badge variant="outline" className="text-xs">
+                              {aluno.filial.nome}
+                            </Badge>
+                          )}
+                        </div>
+                        <p className="text-sm text-muted-foreground flex items-center gap-1">
+                          <Calendar className="w-3 h-3" />
                           <span className="font-medium">Evento:</span> {evento?.nome || "-"}
                         </p>
-                      </div>
-                      <div className="flex flex-col items-start sm:items-end gap-2">
-                        <Badge variant={isPago ? "default" : "secondary"}>
-                          {inscricao.statusPagamento}
-                        </Badge>
                         <p className="text-xs text-muted-foreground">
-                          {inscricao.dataInscricao ? new Date(inscricao.dataInscricao).toLocaleDateString('pt-BR') : 'N/A'}
+                          Inscrito em {inscricao.dataInscricao ? new Date(inscricao.dataInscricao).toLocaleDateString('pt-BR') : 'N/A'}
                         </p>
-                        {!isPago && (
-                          <Button
-                            size="sm"
-                            onClick={() => confirmarPagamentoEventoMutation.mutate(inscricao.id)}
-                            disabled={confirmarPagamentoEventoMutation.isPending}
-                          >
-                            Confirmar Pagamento
-                          </Button>
-                        )}
+                      </div>
+                      <div className="flex flex-col items-start sm:items-end gap-2 min-w-[200px]">
+                        <div className="flex flex-wrap gap-2 justify-start sm:justify-end">
+                          <Badge className={isPago ? "bg-green-500" : "bg-orange-500"}>
+                            {isPago ? "✓ Pago" : "⏳ Pendente"}
+                          </Badge>
+                          <Badge variant={isConfirmado ? "default" : "outline"} className={isConfirmado ? "bg-blue-600" : ""}>
+                            {isConfirmado ? "✓ Presença confirmada" : "📝 Inscrito"}
+                          </Badge>
+                        </div>
+                        <div className="flex flex-col gap-2 w-full sm:items-end">
+                          {!isPago && (
+                            <Button
+                              size="sm"
+                              className="bg-green-600 hover:bg-green-700 w-full sm:w-auto"
+                              onClick={() => confirmarPagamentoEventoMutation.mutate(inscricao.id)}
+                              disabled={confirmarPagamentoEventoMutation.isPending}
+                            >
+                              <DollarSign className="w-4 h-4 mr-1" />
+                              Confirmar Pagamento
+                            </Button>
+                          )}
+                          {isPago && !isConfirmado && (
+                            <Button
+                              size="sm"
+                              className="bg-blue-600 hover:bg-blue-700 w-full sm:w-auto"
+                              onClick={() => confirmarPresencaEventoMutation.mutate(inscricao.id)}
+                              disabled={confirmarPresencaEventoMutation.isPending}
+                            >
+                              <CheckCircle className="w-4 h-4 mr-1" />
+                              Dar Baixa (Presença)
+                            </Button>
+                          )}
+                        </div>
                       </div>
                     </div>
                   </CardContent>
@@ -2599,66 +2614,178 @@ export default function FinanceiroCompleto() {
           )}
 
           {/* Form de Inscrição em Evento */}
-          {dialogType === "inscricao-evento" && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Label htmlFor="alunoInscricao">Aluno</Label>
-                  <Select>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione o aluno" />
+          {dialogType === "inscricao-evento" && (() => {
+            const eventoSelecionado = eventos.find(e => e.id === inscricaoEventoForm.eventoId);
+            const alunoSelecionado = alunos.find(a => a.id === inscricaoEventoForm.alunoId);
+            return (
+              <div className="space-y-5">
+                {eventoSelecionado && (
+                  <Card className="bg-purple-50 border-purple-200">
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-xs uppercase tracking-wider text-purple-700 font-semibold">Evento</p>
+                          <h3 className="text-lg font-bold text-purple-900">{eventoSelecionado.nome}</h3>
+                          <p className="text-xs text-purple-700 mt-1 flex items-center gap-1">
+                            <Calendar className="w-3 h-3" />
+                            {new Date(eventoSelecionado.dataEvento).toLocaleDateString('pt-BR')}
+                          </p>
+                        </div>
+                        <p className="text-2xl font-bold text-purple-700">
+                          R$ {parseFloat(eventoSelecionado.preco || "0").toFixed(2)}
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                <div className="space-y-2">
+                  <Label className="text-base font-semibold flex items-center gap-2">
+                    <Users className="w-4 h-4 text-primary" />
+                    Selecione o Aluno
+                  </Label>
+                  <Select
+                    value={inscricaoEventoForm.alunoId ? inscricaoEventoForm.alunoId.toString() : ""}
+                    onValueChange={(value) => setInscricaoEventoForm(prev => ({ ...prev, alunoId: parseInt(value) }))}
+                  >
+                    <SelectTrigger className="h-12">
+                      <SelectValue placeholder="Escolha o aluno que vai participar" />
                     </SelectTrigger>
                     <SelectContent>
                       {alunos.map((aluno) => (
                         <SelectItem key={aluno.id} value={aluno.id.toString()}>
-                          {aluno.nome}
+                          <div className="flex items-center gap-2">
+                            <span className="font-medium">{aluno.nome}</span>
+                            {aluno.filial && <Badge variant="outline" className="text-xs">{aluno.filial.nome}</Badge>}
+                          </div>
                         </SelectItem>
                       ))}
                     </SelectContent>
                   </Select>
                 </div>
-                <div>
-                  <Label htmlFor="eventoInscricao">Evento</Label>
-                  <Select>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Selecione o evento" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {eventos.map((evento) => (
-                        <SelectItem key={evento.id} value={evento.id.toString()}>
-                          {evento.nome} - R$ {parseFloat(evento.preco || "0").toFixed(2)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+
+                {!eventoSelecionado && (
+                  <div className="space-y-2">
+                    <Label className="text-base font-semibold flex items-center gap-2">
+                      <Calendar className="w-4 h-4 text-purple-600" />
+                      Selecione o Evento
+                    </Label>
+                    <Select
+                      value={inscricaoEventoForm.eventoId ? inscricaoEventoForm.eventoId.toString() : ""}
+                      onValueChange={(value) => setInscricaoEventoForm(prev => ({ ...prev, eventoId: parseInt(value) }))}
+                    >
+                      <SelectTrigger className="h-12">
+                        <SelectValue placeholder="Escolha o evento" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {eventos.map((evento) => (
+                          <SelectItem key={evento.id} value={evento.id.toString()}>
+                            {evento.nome} - R$ {parseFloat(evento.preco || "0").toFixed(2)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label className="text-base font-semibold">Status do Pagamento</Label>
+                    <Select
+                      value={inscricaoEventoForm.statusPagamento}
+                      onValueChange={(value) => setInscricaoEventoForm(prev => ({ ...prev, statusPagamento: value }))}
+                    >
+                      <SelectTrigger className="h-12">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="pendente">⏳ Pendente</SelectItem>
+                        <SelectItem value="pago">✓ Pago</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label className="text-base font-semibold">Confirmação</Label>
+                    <Select
+                      value={inscricaoEventoForm.statusConfirmacao}
+                      onValueChange={(value) => setInscricaoEventoForm(prev => ({ ...prev, statusConfirmacao: value }))}
+                    >
+                      <SelectTrigger className="h-12">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="inscrito">📝 Inscrito</SelectItem>
+                        <SelectItem value="confirmado">✓ Presença confirmada</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-base font-semibold">Observações (opcional)</Label>
+                  <Textarea
+                    placeholder="Ex: Necessidades especiais, alergias, restrições..."
+                    className="min-h-[80px]"
+                    value={inscricaoEventoForm.observacoes}
+                    onChange={(e) => setInscricaoEventoForm(prev => ({ ...prev, observacoes: e.target.value }))}
+                  />
+                </div>
+
+                {alunoSelecionado && eventoSelecionado && (
+                  <Card className="bg-green-50 border-green-200">
+                    <CardContent className="p-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-xs uppercase tracking-wider text-green-700 font-semibold">Resumo</p>
+                          <p className="text-base font-bold text-green-900">{alunoSelecionado.nome}</p>
+                          <p className="text-xs text-green-700">
+                            {alunoSelecionado.filial?.nome || "Sem unidade"} · {eventoSelecionado.nome}
+                          </p>
+                        </div>
+                        <p className="text-2xl font-bold text-green-700">
+                          R$ {parseFloat(eventoSelecionado.preco || "0").toFixed(2)}
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+
+                <div className="flex gap-3 pt-2">
+                  <Button onClick={() => setDialogOpen(false)} variant="outline" className="flex-1 h-12">
+                    Cancelar
+                  </Button>
+                  <Button
+                    className="flex-1 h-12 bg-purple-600 hover:bg-purple-700"
+                    disabled={inscreverEventoMutation.isPending}
+                    onClick={() => {
+                      if (!inscricaoEventoForm.alunoId || !inscricaoEventoForm.eventoId) {
+                        toast({
+                          title: "Campos obrigatórios",
+                          description: "Selecione o aluno e o evento para realizar a inscrição.",
+                          variant: "destructive",
+                        });
+                        return;
+                      }
+                      inscreverEventoMutation.mutate({
+                        alunoId: inscricaoEventoForm.alunoId,
+                        eventoId: inscricaoEventoForm.eventoId,
+                        statusPagamento: inscricaoEventoForm.statusPagamento,
+                        statusConfirmacao: inscricaoEventoForm.statusConfirmacao,
+                        observacoes: inscricaoEventoForm.observacoes || null,
+                      } as InsertInscricaoEvento);
+                    }}
+                  >
+                    {inscreverEventoMutation.isPending ? "Inscrevendo..." : (
+                      <>
+                        <CheckCircle className="w-4 h-4 mr-2" />
+                        Confirmar Inscrição
+                      </>
+                    )}
+                  </Button>
                 </div>
               </div>
-              <div>
-                <Label htmlFor="statusPagamentoEvento">Status do Pagamento</Label>
-                <Select defaultValue="pendente">
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="pendente">Pendente</SelectItem>
-                    <SelectItem value="pago">Pago</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label htmlFor="observacoesInscricao">Observações</Label>
-                <Textarea id="observacoesInscricao" placeholder="Observações sobre a inscrição..." />
-              </div>
-              <div className="flex gap-2 pt-4">
-                <Button onClick={() => setDialogOpen(false)} variant="outline" className="flex-1">
-                  Cancelar
-                </Button>
-                <Button className="flex-1">
-                  Confirmar Inscrição
-                </Button>
-              </div>
-            </div>
-          )}
+            );
+          })()}
         </DialogContent>
       </Dialog>
 

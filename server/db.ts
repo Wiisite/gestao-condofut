@@ -53,13 +53,6 @@ export async function runMigrations() {
       ADD COLUMN IF NOT EXISTS papel VARCHAR(50) DEFAULT 'admin';
     `);
 
-    // Adicionar colunas de endereço do aluno (apartamento/bloco)
-    await pool.query(`
-      ALTER TABLE alunos 
-      ADD COLUMN IF NOT EXISTS apartamento VARCHAR(50),
-      ADD COLUMN IF NOT EXISTS bloco VARCHAR(50);
-    `);
-
     // Adicionar colunas do Mercado Pago
     await pool.query(`
       ALTER TABLE pagamentos 
@@ -74,6 +67,12 @@ export async function runMigrations() {
       ADD COLUMN IF NOT EXISTS foto_fundo_url TEXT,
       ADD COLUMN IF NOT EXISTS is_matriz BOOLEAN DEFAULT FALSE,
       ADD COLUMN IF NOT EXISTS ativa BOOLEAN DEFAULT TRUE;
+    `);
+
+    // Adicionar coluna status_confirmacao na tabela inscricoes_eventos
+    await pool.query(`
+      ALTER TABLE inscricoes_eventos
+      ADD COLUMN IF NOT EXISTS status_confirmacao VARCHAR(20) DEFAULT 'inscrito';
     `);
 
     console.log("Migrations verificadas com sucesso");
