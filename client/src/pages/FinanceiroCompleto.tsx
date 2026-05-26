@@ -112,6 +112,9 @@ export default function FinanceiroCompleto() {
     observacoes: "",
   });
 
+  // Estado para eventos
+  const [editingEventoId, setEditingEventoId] = useState<number | null>(null);
+
   // Estado para uniformes
   const [editingUniformeId, setEditingUniformeId] = useState<number | null>(null);
   const [uniformeForm, setUniformeForm] = useState({
@@ -536,7 +539,7 @@ export default function FinanceiroCompleto() {
     }
   };
 
-  const handleCreateEvento = () => {
+  const handleSaveEvento = () => {
     const nome = (document.getElementById("nomeEvento") as HTMLInputElement)?.value;
     const data = (document.getElementById("dataEvento") as HTMLInputElement)?.value;
     const descricao = (document.getElementById("descricaoEvento") as HTMLTextAreaElement)?.value;
@@ -554,7 +557,7 @@ export default function FinanceiroCompleto() {
       return;
     }
 
-    createEventoMutation.mutate({
+    const payload = {
       nome,
       dataEvento: data,
       descricao: descricao || null,
@@ -563,7 +566,13 @@ export default function FinanceiroCompleto() {
       vagasMaximas: parseInt(vagas) || 50,
       horaInicio: hora || null,
       ativo: true,
-    });
+    };
+
+    if (editingEventoId) {
+      updateEventoMutation.mutate({ id: editingEventoId, data: payload });
+    } else {
+      createEventoMutation.mutate(payload as InsertEvento);
+    }
   };
 
   const createEventoMutation = useMutation({
@@ -573,12 +582,55 @@ export default function FinanceiroCompleto() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/eventos"] });
       setDialogOpen(false);
+      setEditingEventoId(null);
       toast({
         title: "Sucesso",
         description: "Evento criado com sucesso!",
       });
     },
   });
+
+  const updateEventoMutation = useMutation({
+    mutationFn: async ({ id, data }: { id: number; data: Partial<InsertEvento> }) => {
+      return await apiRequest("PUT", `/api/eventos/${id}`, data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/eventos"] });
+      setDialogOpen(false);
+      setEditingEventoId(null);
+      toast({
+        title: "Sucesso",
+        description: "Evento atualizado com sucesso!",
+      });
+    },
+  });
+
+  const deleteEventoMutation = useMutation({
+    mutationFn: async (id: number) => {
+      return await apiRequest("DELETE", `/api/eventos/${id}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/eventos"] });
+      queryClient.invalidateQueries({ queryKey: ["/api/inscricoes-eventos"] });
+      toast({
+        title: "Sucesso",
+        description: "Evento excluído com sucesso!",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erro",
+        description: error?.message || "Não foi possível excluir o evento",
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleEditEvento = (evento: Evento) => {
+    setEditingEventoId(evento.id);
+    setDialogType("evento");
+    setDialogOpen(true);
+  };
 
   const createUniformeMutation = useMutation({
     mutationFn: async (data: InsertUniforme) => {
@@ -1638,14 +1690,48 @@ export default function FinanceiroCompleto() {
                             <Badge className="bg-blue-600">{totalConfirmados} confirmados</Badge>
                           </div>
                         </div>
-                        <div className="text-right">
+                        <div className="text-right flex flex-col items-end gap-2">
                           <p className="text-2xl font-bold text-purple-600">
                             R$ {parseFloat(evento.preco || "0").toFixed(2)}
                           </p>
+                          <div className="flex gap-2">
+                            <Button
+                              onClick={() => handleEditEvento(evento)}
+                              size="sm"
+                              variant="outline"
+                              title="Editar evento"
+                            >
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button size="sm" variant="outline" className="text-red-600 hover:text-red-700 hover:bg-red-50" title="Excluir evento">
+                                  <Trash2 className="w-4 h-4" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Excluir evento?</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Tem certeza que deseja excluir o evento <strong>{evento.nome}</strong>? Esta ação também removerá todas as inscrições relacionadas e não pode ser desfeita.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={() => deleteEventoMutation.mutate(evento.id)}
+                                    className="bg-red-600 hover:bg-red-700"
+                                  >
+                                    Excluir
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </div>
                           <Button
                             onClick={() => openDialog("inscricao-evento", evento.id)}
                             size="sm"
-                            className="mt-2 bg-purple-600 hover:bg-purple-700"
+                            className="bg-purple-600 hover:bg-purple-700"
                           >
                             <Plus className="w-4 h-4 mr-1" />
                             Inscrever Aluno
@@ -2146,7 +2232,7 @@ export default function FinanceiroCompleto() {
           <DialogHeader>
             <DialogTitle>
               {dialogType === "pagamento" && (editingPagamentoId ? "Editar Pagamento" : "Novo Pagamento")}
-              {dialogType === "evento" && "Criar Evento"}
+              {dialogType === "evento" && (editingEventoId ? "Editar Evento" : "Criar Evento")}
               {dialogType === "uniforme" && "Adicionar Uniforme"}
               {dialogType === "compra-uniforme" && "Comprar Uniforme"}
               {dialogType === "inscricao-evento" && "Inscrever em Evento"}
@@ -2366,54 +2452,59 @@ export default function FinanceiroCompleto() {
           )}
 
           {/* Form de Evento */}
-          {dialogType === "evento" && (
-            <div className="space-y-4">
+          {dialogType === "evento" && (() => {
+            const editingEvento = editingEventoId ? eventos.find(e => e.id === editingEventoId) : null;
+            return (
+            <div className="space-y-4" key={editingEventoId || "novo"}>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label htmlFor="nomeEvento">Nome do Evento</Label>
-                  <Input id="nomeEvento" placeholder="Ex: Torneio de Futebol" />
+                  <Input id="nomeEvento" placeholder="Ex: Torneio de Futebol" defaultValue={editingEvento?.nome || ""} />
                 </div>
                 <div>
                   <Label htmlFor="dataEvento">Data do Evento</Label>
-                  <Input id="dataEvento" type="date" />
+                  <Input id="dataEvento" type="date" defaultValue={editingEvento?.dataEvento ? new Date(editingEvento.dataEvento).toISOString().split("T")[0] : ""} />
                 </div>
               </div>
               <div>
                 <Label htmlFor="descricaoEvento">Descrição</Label>
-                <Textarea id="descricaoEvento" placeholder="Descrição detalhada do evento..." />
+                <Textarea id="descricaoEvento" placeholder="Descrição detalhada do evento..." defaultValue={editingEvento?.descricao || ""} />
               </div>
               <div className="grid grid-cols-3 gap-4">
                 <div>
                   <Label htmlFor="localEvento">Local</Label>
-                  <Input id="localEvento" placeholder="Local do evento" />
+                  <Input id="localEvento" placeholder="Local do evento" defaultValue={(editingEvento as any)?.local || ""} />
                 </div>
                 <div>
                   <Label htmlFor="precoEvento">Preço (R$)</Label>
-                  <Input id="precoEvento" type="number" step="0.01" placeholder="0,00" />
+                  <Input id="precoEvento" type="number" step="0.01" placeholder="0,00" defaultValue={editingEvento?.preco || ""} />
                 </div>
                 <div>
                   <Label htmlFor="vagasEvento">Vagas Máximas</Label>
-                  <Input id="vagasEvento" type="number" placeholder="50" />
+                  <Input id="vagasEvento" type="number" placeholder="50" defaultValue={editingEvento?.vagasMaximas || ""} />
                 </div>
               </div>
               <div>
                 <Label htmlFor="horaInicio">Hora de Início</Label>
-                <Input id="horaInicio" type="time" />
+                <Input id="horaInicio" type="time" defaultValue={(editingEvento as any)?.horaInicio || ""} />
               </div>
               <div className="flex gap-2 pt-4">
-                <Button onClick={() => setDialogOpen(false)} variant="outline" className="flex-1">
+                <Button onClick={() => { setDialogOpen(false); setEditingEventoId(null); }} variant="outline" className="flex-1">
                   Cancelar
                 </Button>
                 <Button 
-                  onClick={handleCreateEvento}
-                  disabled={createEventoMutation.isPending}
+                  onClick={handleSaveEvento}
+                  disabled={createEventoMutation.isPending || updateEventoMutation.isPending}
                   className="flex-1"
                 >
-                  {createEventoMutation.isPending ? "Criando..." : "Criar Evento"}
+                  {(createEventoMutation.isPending || updateEventoMutation.isPending)
+                    ? "Salvando..."
+                    : (editingEventoId ? "Salvar Alterações" : "Criar Evento")}
                 </Button>
               </div>
             </div>
-          )}
+            );
+          })()}
 
           {/* Form de Uniforme */}
           {dialogType === "uniforme" && (
