@@ -47,6 +47,38 @@ router.delete("/eventos/:id", requireAdminAuth, async (req, res) => {
   }
 });
 
+// Inscrições em Eventos
+router.get("/inscricoes-eventos", async (req, res) => {
+  try {
+    const inscricoes = await storage.getInscricoesEventos();
+    res.json(inscricoes);
+  } catch (error) {
+    console.error("Error fetching inscricoes-eventos:", error);
+    res.status(500).json({ message: "Failed to fetch inscricoes" });
+  }
+});
+
+router.post("/inscricoes-eventos", async (req, res) => {
+  try {
+    const inscricao = await storage.createInscricaoEvento(req.body);
+    res.status(201).json(inscricao);
+  } catch (error) {
+    console.error("Error creating inscricao-evento:", error);
+    res.status(500).json({ message: "Failed to create inscricao" });
+  }
+});
+
+router.patch("/inscricoes-eventos/:id", requireAdminAuth, async (req, res) => {
+  try {
+    const id = parseInt(req.params.id);
+    const updated = await storage.updateInscricaoEvento(id, req.body);
+    res.json(updated);
+  } catch (error) {
+    console.error("Error updating inscricao-evento:", error);
+    res.status(500).json({ message: "Erro ao atualizar inscrição" });
+  }
+});
+
 // Uniformes
 router.get("/uniformes", async (req, res) => {
   try {

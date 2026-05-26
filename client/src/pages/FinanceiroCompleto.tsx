@@ -642,6 +642,26 @@ export default function FinanceiroCompleto() {
     },
   });
 
+  const confirmarPagamentoEventoMutation = useMutation({
+    mutationFn: async (id: number) => {
+      return await apiRequest("PATCH", `/api/inscricoes-eventos/${id}`, { statusPagamento: "pago" });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/inscricoes-eventos"] });
+      toast({
+        title: "Pagamento confirmado",
+        description: "A inscrição foi marcada como paga.",
+      });
+    },
+    onError: (error: any) => {
+      toast({
+        title: "Erro",
+        description: error.message || "Não foi possível confirmar o pagamento.",
+        variant: "destructive",
+      });
+    },
+  });
+
   // Cálculos financeiros
   const totalPagamentos = pagamentos.reduce((sum, p) => sum + parseFloat(p.valor || "0"), 0);
   const totalUniformes = comprasUniformes.reduce((sum, c) => sum + parseFloat(c.preco || "0") * (c.quantidade || 1), 0);
@@ -1598,21 +1618,36 @@ export default function FinanceiroCompleto() {
             {inscricoesEventos.map((inscricao) => {
               const aluno = alunos.find(a => a.id === inscricao.alunoId);
               const evento = eventos.find(e => e.id === inscricao.eventoId);
+              const isPago = inscricao.statusPagamento === "pago";
               return (
                 <Card key={inscricao.id}>
                   <CardContent className="p-4">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <h3 className="font-semibold">{aluno?.nome}</h3>
-                        <p className="text-sm text-muted-foreground">{evento?.nome}</p>
+                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                      <div className="space-y-1">
+                        <h3 className="font-semibold">{aluno?.nome || "Aluno não encontrado"}</h3>
+                        <p className="text-sm text-muted-foreground">
+                          <span className="font-medium">Unidade:</span> {aluno?.filial?.nome || "Sem unidade"}
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          <span className="font-medium">Evento:</span> {evento?.nome || "-"}
+                        </p>
                       </div>
-                      <div className="text-right">
-                        <Badge variant={inscricao.statusPagamento === "pago" ? "default" : "secondary"}>
+                      <div className="flex flex-col items-start sm:items-end gap-2">
+                        <Badge variant={isPago ? "default" : "secondary"}>
                           {inscricao.statusPagamento}
                         </Badge>
-                        <p className="text-sm text-muted-foreground mt-1">
+                        <p className="text-xs text-muted-foreground">
                           {inscricao.dataInscricao ? new Date(inscricao.dataInscricao).toLocaleDateString('pt-BR') : 'N/A'}
                         </p>
+                        {!isPago && (
+                          <Button
+                            size="sm"
+                            onClick={() => confirmarPagamentoEventoMutation.mutate(inscricao.id)}
+                            disabled={confirmarPagamentoEventoMutation.isPending}
+                          >
+                            Confirmar Pagamento
+                          </Button>
+                        )}
                       </div>
                     </div>
                   </CardContent>
