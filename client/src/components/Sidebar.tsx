@@ -107,12 +107,6 @@ export default function Sidebar() {
       icon: Settings,
       active: location === "/configuracoes",
     },
-    {
-      name: "Portal do Responsável",
-      href: "/portal",
-      icon: Users,
-      active: location === "/portal",
-    },
     ...(user?.papel === "super_admin" ? [{
       name: "Gerenciar Admins",
       href: "/gerenciar-admins",
