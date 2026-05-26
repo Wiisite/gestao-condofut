@@ -28,7 +28,9 @@ import {
   CheckCircle,
   Package,
   X,
-  Eye
+  Eye,
+  ChevronLeft,
+  ChevronRight
 } from "lucide-react";
 import { DialogFooter } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
@@ -128,6 +130,40 @@ export default function FinanceiroCompleto() {
     imagemUrl: "",
   });
   const [isCriandoNovaCategoria, setIsCriandoNovaCategoria] = useState(false);
+  const [uniformeSlideIdx, setUniformeSlideIdx] = useState<Record<number, number>>({});
+
+  // Tamanhos padrão sugeridos no formulário
+  const TAMANHOS_PADRAO = ["08", "10", "12", "14", "16", "P", "M", "G", "GG"];
+
+  // Converte campo imagemUrl em array (suporta JSON array OU string única)
+  const parseImagens = (raw: string | null | undefined): string[] => {
+    if (!raw) return [];
+    const trimmed = String(raw).trim();
+    if (trimmed.startsWith("[")) {
+      try {
+        const arr = JSON.parse(trimmed);
+        return Array.isArray(arr) ? arr.filter(Boolean) : [];
+      } catch {
+        return [trimmed];
+      }
+    }
+    return [trimmed];
+  };
+
+  // Converte string de tamanhos (CSV ou JSON) em array
+  const parseTamanhos = (raw: string | null | undefined): string[] => {
+    if (!raw) return [];
+    const trimmed = String(raw).trim();
+    if (trimmed.startsWith("[")) {
+      try {
+        const arr = JSON.parse(trimmed);
+        return Array.isArray(arr) ? arr.map(String).filter(Boolean) : [];
+      } catch {
+        return trimmed.split(",").map(s => s.trim()).filter(Boolean);
+      }
+    }
+    return trimmed.split(",").map(s => s.trim()).filter(Boolean);
+  };
 
   // Queries
   const { data: pagamentos = [] } = useQuery<Pagamento[]>({
@@ -1464,26 +1500,71 @@ export default function FinanceiroCompleto() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {uniformes.map((uniforme) => (
               <Card key={uniforme.id} className="overflow-hidden">
-                <div className="w-full h-72 bg-muted/20 flex items-center justify-center overflow-hidden border-b">
-                  {uniforme.imagemUrl ? (
-                    <img 
-                      src={uniforme.imagemUrl} 
-                      alt={uniforme.nome}
-                      className="max-w-full max-h-full object-contain hover:scale-105 transition-transform duration-300"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).src = 'https://placehold.co/400x400?text=Sem+Imagem';
-                      }}
-                    />
-                  ) : (
-                    <ShoppingBag className="w-16 h-16 text-muted-foreground/30" />
-                  )}
-                </div>
+                {(() => {
+                  const imagens = parseImagens(uniforme.imagemUrl);
+                  const idx = Math.min(uniformeSlideIdx[uniforme.id] || 0, Math.max(imagens.length - 1, 0));
+                  const goPrev = () => setUniformeSlideIdx(prev => ({ ...prev, [uniforme.id]: (idx - 1 + imagens.length) % imagens.length }));
+                  const goNext = () => setUniformeSlideIdx(prev => ({ ...prev, [uniforme.id]: (idx + 1) % imagens.length }));
+                  return (
+                    <div className="relative w-full h-72 bg-muted/20 flex items-center justify-center overflow-hidden border-b group">
+                      {imagens.length > 0 ? (
+                        <>
+                          <img
+                            src={imagens[idx]}
+                            alt={uniforme.nome}
+                            className="max-w-full max-h-full object-contain hover:scale-105 transition-transform duration-300"
+                            onError={(e) => {
+                              (e.target as HTMLImageElement).src = 'https://placehold.co/400x400?text=Sem+Imagem';
+                            }}
+                          />
+                          {imagens.length > 1 && (
+                            <>
+                              <button
+                                type="button"
+                                onClick={goPrev}
+                                className="absolute left-2 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white rounded-full p-1.5 shadow opacity-0 group-hover:opacity-100 transition"
+                                aria-label="Imagem anterior"
+                              >
+                                <ChevronLeft className="w-5 h-5" />
+                              </button>
+                              <button
+                                type="button"
+                                onClick={goNext}
+                                className="absolute right-2 top-1/2 -translate-y-1/2 bg-white/80 hover:bg-white rounded-full p-1.5 shadow opacity-0 group-hover:opacity-100 transition"
+                                aria-label="Próxima imagem"
+                              >
+                                <ChevronRight className="w-5 h-5" />
+                              </button>
+                              <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1.5">
+                                {imagens.map((_, i) => (
+                                  <button
+                                    key={i}
+                                    type="button"
+                                    onClick={() => setUniformeSlideIdx(prev => ({ ...prev, [uniforme.id]: i }))}
+                                    className={`w-2 h-2 rounded-full transition ${i === idx ? "bg-blue-600" : "bg-white/70 hover:bg-white"}`}
+                                    aria-label={`Ir para imagem ${i + 1}`}
+                                  />
+                                ))}
+                              </div>
+                            </>
+                          )}
+                        </>
+                      ) : (
+                        <ShoppingBag className="w-16 h-16 text-muted-foreground/30" />
+                      )}
+                    </div>
+                  );
+                })()}
                 <CardContent className="p-4">
                   <div className="space-y-2">
                     <h3 className="font-semibold">{uniforme.nome}</h3>
                     <p className="text-sm text-muted-foreground">{uniforme.descricao}</p>
                     <div className="flex items-center justify-between">
-                      <Badge variant="outline">{uniforme.tamanhos}</Badge>
+                      <div className="flex flex-wrap gap-1">
+                        {parseTamanhos(uniforme.tamanhos).map(t => (
+                          <Badge key={t} variant="outline">{t}</Badge>
+                        ))}
+                      </div>
                       <p className="text-lg font-bold text-blue-600">
                         R$ {parseFloat(uniforme.preco || "0").toFixed(2)}
                       </p>
@@ -2564,52 +2645,108 @@ export default function FinanceiroCompleto() {
                 </div>
               )}
               
-              {/* Campo de Imagem do Uniforme */}
-              <div>
-                <Label htmlFor="imagemUniforme">Imagem do Uniforme (URL ou Base64)</Label>
-                <div className="mt-2 space-y-3">
-                  <Input 
-                    placeholder="Cole a URL da imagem ou use o seletor abaixo"
-                    value={uniformeForm.imagemUrl}
-                    onChange={(e) => setUniformeForm(prev => ({ ...prev, imagemUrl: e.target.value }))}
-                  />
-                  <div className="flex items-center gap-4">
-                    <Input 
-                      id="imagemUniforme" 
-                      type="file" 
-                      accept="image/*"
-                      className="flex-1"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) {
-                          const reader = new FileReader();
-                          reader.onload = (event) => {
-                            setUniformeForm(prev => ({ ...prev, imagemUrl: event.target?.result as string }));
-                          };
-                          reader.readAsDataURL(file);
-                        }
-                      }}
-                    />
-                  </div>
-                  {uniformeForm.imagemUrl && (
-                    <div className="relative w-32 h-32">
-                      <img 
-                        src={uniformeForm.imagemUrl} 
-                        alt="Preview" 
-                        className="w-full h-full object-cover rounded-lg border"
+              {/* Campo de Imagens do Uniforme (múltiplas) */}
+              {(() => {
+                const imagensAtuais = parseImagens(uniformeForm.imagemUrl);
+                const setImagens = (next: string[]) => {
+                  const cleaned = next.filter(Boolean);
+                  setUniformeForm(prev => ({
+                    ...prev,
+                    imagemUrl: cleaned.length === 0 ? "" : cleaned.length === 1 ? cleaned[0] : JSON.stringify(cleaned),
+                  }));
+                };
+                const addImagem = (url: string) => {
+                  if (!url) return;
+                  setImagens([...imagensAtuais, url]);
+                };
+                const removeImagem = (idx: number) => {
+                  setImagens(imagensAtuais.filter((_, i) => i !== idx));
+                };
+                return (
+                  <div>
+                    <Label>Imagens do Uniforme (slider)</Label>
+                    <div className="mt-2 space-y-3">
+                      <div className="flex gap-2">
+                        <Input
+                          id="novaImagemUrl"
+                          placeholder="Cole uma URL e clique em Adicionar"
+                          onKeyDown={(e) => {
+                            if (e.key === "Enter") {
+                              e.preventDefault();
+                              const target = e.currentTarget as HTMLInputElement;
+                              addImagem(target.value.trim());
+                              target.value = "";
+                            }
+                          }}
+                        />
+                        <Button
+                          type="button"
+                          variant="outline"
+                          onClick={() => {
+                            const input = document.getElementById("novaImagemUrl") as HTMLInputElement | null;
+                            if (input) {
+                              addImagem(input.value.trim());
+                              input.value = "";
+                            }
+                          }}
+                        >
+                          <Plus className="w-4 h-4 mr-1" /> Adicionar
+                        </Button>
+                      </div>
+                      <Input
+                        id="imagemUniforme"
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        onChange={(e) => {
+                          const files = Array.from(e.target.files || []);
+                          files.forEach((file) => {
+                            const reader = new FileReader();
+                            reader.onload = (event) => {
+                              const result = event.target?.result as string;
+                              if (result) {
+                                setUniformeForm(prev => {
+                                  const atual = parseImagens(prev.imagemUrl);
+                                  const novas = [...atual, result];
+                                  return {
+                                    ...prev,
+                                    imagemUrl: novas.length === 1 ? novas[0] : JSON.stringify(novas),
+                                  };
+                                });
+                              }
+                            };
+                            reader.readAsDataURL(file);
+                          });
+                          (e.target as HTMLInputElement).value = "";
+                        }}
                       />
-                      <Button 
-                        size="icon" 
-                        variant="destructive" 
-                        className="absolute -top-2 -right-2 h-6 w-6"
-                        onClick={() => setUniformeForm(prev => ({ ...prev, imagemUrl: "" }))}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
+                      {imagensAtuais.length > 0 && (
+                        <div className="flex flex-wrap gap-2">
+                          {imagensAtuais.map((url, i) => (
+                            <div key={i} className="relative w-24 h-24">
+                              <img
+                                src={url}
+                                alt={`Imagem ${i + 1}`}
+                                className="w-full h-full object-cover rounded-lg border"
+                              />
+                              <span className="absolute top-1 left-1 bg-black/60 text-white text-[10px] px-1.5 rounded">{i + 1}</span>
+                              <Button
+                                type="button"
+                                size="icon"
+                                variant="destructive"
+                                className="absolute -top-2 -right-2 h-6 w-6"
+                                onClick={() => removeImagem(i)}
+                              >
+                                <X className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
                     </div>
-                  )}
-                </div>
-              </div>
+                  </div>
+                );
+              })()}
               
               <div>
                 <Label htmlFor="descricaoUniforme">Descrição</Label>
@@ -2632,14 +2769,84 @@ export default function FinanceiroCompleto() {
                     onChange={(e) => setUniformeForm(prev => ({ ...prev, preco: e.target.value }))}
                   />
                 </div>
-                <div>
-                  <Label htmlFor="tamanhos">Tamanhos Disponíveis</Label>
-                  <Input 
-                    id="tamanhos" 
-                    placeholder="P, M, G, GG" 
-                    value={uniformeForm.tamanhos}
-                    onChange={(e) => setUniformeForm(prev => ({ ...prev, tamanhos: e.target.value }))}
-                  />
+                <div className="col-span-2">
+                  <Label>Tamanhos Disponíveis</Label>
+                  {(() => {
+                    const selecionados = parseTamanhos(uniformeForm.tamanhos);
+                    const setTamanhos = (next: string[]) => {
+                      setUniformeForm(prev => ({ ...prev, tamanhos: next.join(", ") }));
+                    };
+                    const toggle = (t: string) => {
+                      if (selecionados.includes(t)) {
+                        setTamanhos(selecionados.filter(s => s !== t));
+                      } else {
+                        setTamanhos([...selecionados, t]);
+                      }
+                    };
+                    const addCustom = (val: string) => {
+                      const v = val.trim();
+                      if (!v || selecionados.includes(v)) return;
+                      setTamanhos([...selecionados, v]);
+                    };
+                    const opcoes = Array.from(new Set([...TAMANHOS_PADRAO, ...selecionados]));
+                    return (
+                      <div className="mt-2 space-y-2">
+                        <div className="flex flex-wrap gap-2">
+                          {opcoes.map((t) => {
+                            const ativo = selecionados.includes(t);
+                            return (
+                              <button
+                                key={t}
+                                type="button"
+                                onClick={() => toggle(t)}
+                                className={`px-3 py-1.5 rounded-md border text-sm font-medium transition ${
+                                  ativo
+                                    ? "bg-blue-600 text-white border-blue-600"
+                                    : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
+                                }`}
+                              >
+                                {t}
+                              </button>
+                            );
+                          })}
+                        </div>
+                        <div className="flex gap-2">
+                          <Input
+                            id="novoTamanho"
+                            placeholder="Outro tamanho (ex: 18, XG)"
+                            className="max-w-[220px]"
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") {
+                                e.preventDefault();
+                                const target = e.currentTarget as HTMLInputElement;
+                                addCustom(target.value);
+                                target.value = "";
+                              }
+                            }}
+                          />
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            onClick={() => {
+                              const input = document.getElementById("novoTamanho") as HTMLInputElement | null;
+                              if (input) {
+                                addCustom(input.value);
+                                input.value = "";
+                              }
+                            }}
+                          >
+                            <Plus className="w-4 h-4 mr-1" /> Adicionar
+                          </Button>
+                        </div>
+                        {selecionados.length > 0 && (
+                          <p className="text-xs text-muted-foreground">
+                            Selecionados: <strong>{selecionados.join(", ")}</strong>
+                          </p>
+                        )}
+                      </div>
+                    );
+                  })()}
                 </div>
                 <div>
                   <Label htmlFor="cores">Cores Disponíveis</Label>
