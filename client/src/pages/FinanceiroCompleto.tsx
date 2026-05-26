@@ -1608,44 +1608,124 @@ export default function FinanceiroCompleto() {
           </div>
 
           <div className="grid gap-4">
-            {eventos.map((evento) => (
-              <Card key={evento.id}>
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex-1">
-                      <h3 className="font-semibold">{evento.nome}</h3>
-                      <p className="text-sm text-muted-foreground">{evento.descricao}</p>
-                      <div className="flex items-center gap-4 mt-2">
-                        <div className="flex items-center gap-1">
-                          <Calendar className="w-4 h-4" />
-                          <span className="text-sm">
-                            {new Date(evento.dataEvento).toLocaleDateString('pt-BR')}
-                          </span>
+            {eventos.map((evento) => {
+              const inscritos = inscricoesEventos.filter(i => i.eventoId === evento.id);
+              const totalPagos = inscritos.filter(i => i.statusPagamento === "pago").length;
+              const totalConfirmados = inscritos.filter(i => (i as any).statusConfirmacao === "confirmado").length;
+              return (
+                <Card key={evento.id} className="overflow-hidden">
+                  <CardContent className="p-0">
+                    <div className="p-4 bg-gradient-to-r from-purple-50 to-white border-b">
+                      <div className="flex items-start justify-between gap-3 flex-wrap">
+                        <div className="flex-1 min-w-[220px]">
+                          <h3 className="font-bold text-lg text-purple-900">{evento.nome}</h3>
+                          {evento.descricao && (
+                            <p className="text-sm text-muted-foreground">{evento.descricao}</p>
+                          )}
+                          <div className="flex items-center gap-4 mt-2 flex-wrap">
+                            <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                              <Calendar className="w-4 h-4" />
+                              {new Date(evento.dataEvento).toLocaleDateString('pt-BR')}
+                            </div>
+                            <div className="flex items-center gap-1 text-sm text-muted-foreground">
+                              <Users className="w-4 h-4" />
+                              {evento.vagasMaximas} vagas
+                            </div>
+                            <Badge variant="outline" className="bg-white">
+                              {inscritos.length} inscritos
+                            </Badge>
+                            <Badge className="bg-green-500">{totalPagos} pagos</Badge>
+                            <Badge className="bg-blue-600">{totalConfirmados} confirmados</Badge>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-1">
-                          <Users className="w-4 h-4" />
-                          <span className="text-sm">
-                            {evento.vagasMaximas} vagas
-                          </span>
+                        <div className="text-right">
+                          <p className="text-2xl font-bold text-purple-600">
+                            R$ {parseFloat(evento.preco || "0").toFixed(2)}
+                          </p>
+                          <Button
+                            onClick={() => openDialog("inscricao-evento", evento.id)}
+                            size="sm"
+                            className="mt-2 bg-purple-600 hover:bg-purple-700"
+                          >
+                            <Plus className="w-4 h-4 mr-1" />
+                            Inscrever Aluno
+                          </Button>
                         </div>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <p className="text-lg font-bold text-purple-600">
-                        R$ {parseFloat(evento.preco || "0").toFixed(2)}
-                      </p>
-                      <Button 
-                        onClick={() => openDialog("inscricao-evento", evento.id)} 
-                        size="sm"
-                        className="mt-2"
-                      >
-                        Inscrever Aluno
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+
+                    {inscritos.length > 0 ? (
+                      <div className="divide-y">
+                        {inscritos.map((inscricao) => {
+                          const aluno = alunos.find(a => a.id === inscricao.alunoId);
+                          const isPago = inscricao.statusPagamento === "pago";
+                          const isConfirmado = (inscricao as any).statusConfirmacao === "confirmado";
+                          return (
+                            <div
+                              key={inscricao.id}
+                              className={`p-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 ${isConfirmado ? "bg-green-50/40" : ""}`}
+                            >
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <span className="font-semibold">{aluno?.nome || "Aluno"}</span>
+                                  {aluno?.filial && (
+                                    <Badge variant="outline" className="text-xs">
+                                      {aluno.filial.nome}
+                                    </Badge>
+                                  )}
+                                </div>
+                                <div className="flex gap-2 mt-1 flex-wrap">
+                                  <Badge className={isPago ? "bg-green-500" : "bg-orange-500"}>
+                                    {isPago ? "✓ Pago" : "⏳ Pendente"}
+                                  </Badge>
+                                  <Badge className={isConfirmado ? "bg-blue-600" : "bg-gray-400"}>
+                                    {isConfirmado ? "✓ Presença confirmada" : "📝 Aguardando baixa"}
+                                  </Badge>
+                                </div>
+                              </div>
+                              <div className="flex gap-2 flex-wrap">
+                                {!isPago && (
+                                  <Button
+                                    size="sm"
+                                    className="bg-green-600 hover:bg-green-700"
+                                    onClick={() => confirmarPagamentoEventoMutation.mutate(inscricao.id)}
+                                    disabled={confirmarPagamentoEventoMutation.isPending}
+                                  >
+                                    <DollarSign className="w-4 h-4 mr-1" />
+                                    Confirmar Pagamento
+                                  </Button>
+                                )}
+                                {isPago && !isConfirmado && (
+                                  <Button
+                                    size="sm"
+                                    className="bg-blue-600 hover:bg-blue-700"
+                                    onClick={() => confirmarPresencaEventoMutation.mutate(inscricao.id)}
+                                    disabled={confirmarPresencaEventoMutation.isPending}
+                                  >
+                                    <CheckCircle className="w-4 h-4 mr-1" />
+                                    Dar Baixa
+                                  </Button>
+                                )}
+                                {isConfirmado && (
+                                  <Badge className="bg-green-600 px-3 py-1.5">
+                                    <CheckCircle className="w-3 h-3 mr-1" />
+                                    Tudo certo
+                                  </Badge>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    ) : (
+                      <div className="p-6 text-center text-sm text-muted-foreground">
+                        Nenhum aluno inscrito neste evento ainda.
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         </TabsContent>
 
