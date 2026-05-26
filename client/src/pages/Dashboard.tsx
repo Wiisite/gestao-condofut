@@ -28,11 +28,14 @@ export default function Dashboard() {
   const { toast } = useToast();
   const [isProfileDialogOpen, setIsProfileDialogOpen] = useState(false);
   const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
-  const [notifications, setNotifications] = useState([
-    { id: 1, type: "warning", title: "Pagamento Atrasado", message: "3 alunos com mensalidade em atraso", time: "Há 2 horas", read: false },
-    { id: 2, type: "info", title: "Nova Matrícula", message: "João Silva foi matriculado na turma Sub-15", time: "Há 5 horas", read: false },
-    { id: 3, type: "success", title: "Pagamento Recebido", message: "Pagamento de R$ 150,00 confirmado", time: "Ontem", read: true },
-  ]);
+  const [notifications, setNotifications] = useState<Array<{
+    id: number;
+    type: "warning" | "info" | "success";
+    title: string;
+    message: string;
+    time: string;
+    read: boolean;
+  }>>([]);
 
   const [showPassword, setShowPassword] = useState(false);
   const [adminData, setAdminData] = useState({
