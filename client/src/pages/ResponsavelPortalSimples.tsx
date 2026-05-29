@@ -384,7 +384,7 @@ export default function ResponsavelPortal() {
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-4 sm:grid-cols-8 gap-1">
+          <TabsList className="flex w-full overflow-x-auto sm:grid sm:grid-cols-8 h-auto p-1 bg-muted text-muted-foreground rounded-lg gap-1">
             <TabsTrigger value="dashboard" className="text-xs sm:text-sm">📊 Dashboard</TabsTrigger>
             <TabsTrigger value="alunos" className="text-xs sm:text-sm">👨‍👩‍👧‍👦 Filhos</TabsTrigger>
             <TabsTrigger value="pagamentos" className="text-xs sm:text-sm">💳 Pagamentos</TabsTrigger>
